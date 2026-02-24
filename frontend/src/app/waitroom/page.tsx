@@ -1,38 +1,64 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Icon } from '@/components/ui/Icon';
+import { useQueueStatus } from '@/hooks/queries/useBookings';
 
-export default function WaitroomPage() {
+function WaitroomContent() {
   const router = useRouter();
-  const [progress, setProgress] = useState(0);
-  const [position, setPosition] = useState(1458);
-  const [estimatedWait, setEstimatedWait] = useState(15); // minutes
-  const [queueId, setQueueId] = useState('');
+  const searchParams = useSearchParams();
+  const jobId = searchParams.get('jobId') || '';
 
-  // Mocking queue progress
+  const { data: queueStatus, isLoading } = useQueueStatus(jobId, !!jobId);
+
+  const status = queueStatus?.status || 'waiting';
+  const position = queueStatus?.position ?? 0;
+
+  // Redirect when queue processing is complete
   useEffect(() => {
-    setQueueId(`Q-${Math.random().toString(36).substring(2, 11).toUpperCase()}`);
-    
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          router.push('/checkout');
-          return 100;
-        }
-        return prev + 1;
-      });
-      
-      setPosition(prev => Math.max(0, prev - 15));
-      setEstimatedWait(() => Math.max(0, Math.ceil((100 - progress) * 0.15)));
+    if (status === 'completed' && queueStatus?.bookingId) {
+      router.push(`/checkout?bookingId=${queueStatus.bookingId}`);
+    }
+  }, [status, queueStatus?.bookingId, router]);
 
-    }, 2000);
+  // Calculate progress based on status
+  const getProgress = () => {
+    if (status === 'completed') return 100;
+    if (status === 'active') return 80;
+    if (status === 'waiting' || status === 'delayed') {
+      if (position <= 0) return 50;
+      return Math.max(10, Math.min(60, 60 - position * 5));
+    }
+    return 0;
+  };
 
-    return () => clearInterval(interval);
-  }, [progress, router]);
+  const progress = getProgress();
+
+  if (!jobId) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Icon name="error" className="text-5xl text-red-500" />
+        <p className="text-lg text-slate-600 dark:text-slate-400">No queue job found.</p>
+        <button onClick={() => router.push('/concerts')} className="text-primary hover:underline">
+          Browse concerts
+        </button>
+      </div>
+    );
+  }
+
+  if (status === 'failed') {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Icon name="cancel" className="text-5xl text-red-500" />
+        <p className="text-lg text-slate-600 dark:text-slate-400">Booking failed. {queueStatus?.error || 'Please try again.'}</p>
+        <button onClick={() => router.push('/concerts')} className="text-primary hover:underline">
+          Back to concerts
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 relative flex flex-col items-center justify-center min-h-[calc(100vh-130px)] px-4 sm:px-6 lg:px-8 overflow-hidden bg-background-light dark:bg-background-dark">
@@ -62,15 +88,16 @@ export default function WaitroomPage() {
         {/* Status Cards */}
         <div className="grid grid-cols-2 gap-4 mb-10">
             <div className="bg-black/20 dark:bg-black/40 border border-white/5 rounded-2xl p-6 text-center backdrop-blur-md">
-                <p className="text-sm text-slate-400 font-medium uppercase tracking-wider mb-2">People ahead of you</p>
-                <p className="text-4xl font-bold text-white tracking-tight">{position.toLocaleString()}</p>
+                <p className="text-sm text-slate-400 font-medium uppercase tracking-wider mb-2">Status</p>
+                <p className="text-2xl font-bold text-white tracking-tight capitalize">
+                  {isLoading ? '...' : status}
+                </p>
             </div>
              <div className="bg-black/20 dark:bg-black/40 border border-white/5 rounded-2xl p-6 text-center backdrop-blur-md">
-                <p className="text-sm text-slate-400 font-medium uppercase tracking-wider mb-2">Estimated wait time</p>
-                <div className="flex items-end justify-center gap-1">
-                    <p className="text-4xl font-bold text-white tracking-tight">{estimatedWait}</p>
-                    <span className="text-slate-400 font-medium mb-1">min</span>
-                </div>
+                <p className="text-sm text-slate-400 font-medium uppercase tracking-wider mb-2">Position</p>
+                <p className="text-4xl font-bold text-white tracking-tight">
+                  {isLoading ? '...' : position > 0 ? `#${position}` : '—'}
+                </p>
             </div>
         </div>
 
@@ -87,7 +114,7 @@ export default function WaitroomPage() {
                  />
             </div>
             <p className="text-xs text-slate-400 mt-3 text-center">
-                 Your unique queue ID: <span className="font-mono text-slate-300">{queueId}</span>
+                 Your queue job ID: <span className="font-mono text-slate-300">{jobId}</span>
             </p>
         </div>
       </div>
@@ -98,5 +125,13 @@ export default function WaitroomPage() {
            </p>
        </div>
     </div>
+  );
+}
+
+export default function WaitroomPage() {
+  return (
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center min-h-[60vh]"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
+      <WaitroomContent />
+    </Suspense>
   );
 }

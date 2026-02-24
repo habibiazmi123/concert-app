@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -12,7 +12,6 @@ export const apiClient = axios.create({
 // Request Interceptor: Attach Token
 apiClient.interceptors.request.use(
   (config) => {
-    // We will get the token from localStorage or Zustand store
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
     
     if (token && config.headers) {
@@ -25,9 +24,14 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response Interceptor: Handle Token Expiration
+// Response Interceptor: Unwrap envelope + handle token expiration
 apiClient.interceptors.response.use(
   (response) => {
+    // Backend wraps all responses in { success, data, message, timestamp }
+    // Unwrap the envelope so consumers get the actual data directly
+    if (response.data && response.data.success !== undefined && response.data.data !== undefined) {
+      response.data = response.data.data;
+    }
     return response;
   },
   async (error) => {
@@ -41,7 +45,6 @@ apiClient.interceptors.response.use(
         const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
         
         if (!refreshToken) {
-            // Handle logical logout, clear state/storage
             if (typeof window !== 'undefined') {
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('refresh_token');
@@ -50,11 +53,14 @@ apiClient.interceptors.response.use(
             return Promise.reject(error);
         }
         
+        // Use raw axios to avoid interceptors on the refresh call
         const response = await axios.post(`${API_URL}/auth/refresh`, {
-            refreshToken
+          refreshToken,
         });
         
-        const { accessToken } = response.data;
+        // Backend envelope: response.data = { success, data: { accessToken, refreshToken }, ... }
+        const tokens = response.data?.data || response.data;
+        const { accessToken } = tokens;
         
         if (typeof window !== 'undefined') {
              localStorage.setItem('access_token', accessToken);

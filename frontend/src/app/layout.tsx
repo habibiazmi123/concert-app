@@ -4,6 +4,7 @@ import { Spline_Sans } from 'next/font/google';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import QueryProvider from '@/providers/QueryProvider';
+import { AuthInitializer } from '@/components/auth/AuthInitializer';
 
 import './globals.css';
 
@@ -30,9 +31,11 @@ export default function RootLayout({
       </head>
       <body className={`${splineSans.variable} font-display antialiased text-slate-900 dark:text-slate-100 bg-background-light dark:bg-background-dark min-h-screen flex flex-col selection:bg-[#135bec]/30`} >
         <QueryProvider>
-          <Navbar />
-          <main className="flex-1 flex flex-col">{children}</main>
-          <Footer />
+          <AuthInitializer>
+            <Navbar />
+            <main className="flex-1 flex flex-col">{children}</main>
+            <Footer />
+          </AuthInitializer>
         </QueryProvider>
       </body>
     </html>

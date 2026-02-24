@@ -1,7 +1,26 @@
-import Link from "next/link";
-import { Icon } from "@/components/ui/Icon";
+'use client';
+
+import Link from 'next/link';
+import { Icon } from '@/components/ui/Icon';
+import { useConcerts } from '@/hooks/queries/useConcerts';
 
 export default function Home() {
+  const { data } = useConcerts({ limit: 3 });
+  const concerts = data?.data ?? [];
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const getMinPrice = (concert: (typeof concerts)[0]) => {
+    if (!concert.ticketTypes?.length) return 0;
+    return Math.min(...concert.ticketTypes.map((t) => t.price));
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -51,108 +70,47 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Dummy Concert Card 1 */}
-            <Link href="/concerts/1" className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 block">
-              <div className="relative h-48 sm:h-64 overflow-hidden">
-                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
-                 <img src="https://images.unsplash.com/photo-1540039155732-68c8c08e3596?auto=format&fit=crop&q=80" alt="Concert" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                 <div className="absolute bottom-4 left-4 z-20">
-                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary-200 border border-primary/30 backdrop-blur-sm mb-2 text-primary">
-                        Electronic
-                     </span>
-                     <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">Neon Nights Festival</h3>
-                 </div>
+            {concerts.map((concert) => (
+              <Link key={concert.id} href={`/concerts/${concert.id}`} className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 block">
+                <div className="relative h-48 sm:h-64 overflow-hidden">
+                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
+                   <img src={concert.imageUrl || 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&q=80'} alt={concert.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                   <div className="absolute bottom-4 left-4 z-20">
+                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30 backdrop-blur-sm mb-2">
+                          {concert.city}
+                       </span>
+                       <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">{concert.title}</h3>
+                   </div>
+                </div>
+                <div className="p-5">
+                   <div className="flex flex-col gap-3">
+                      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
+                          <Icon name="calendar_today" className="text-[18px]" />
+                          <span>{formatDate(concert.date)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
+                          <Icon name="location_on" className="text-[18px]" />
+                          <span>{concert.venue}, {concert.city}</span>
+                      </div>
+                   </div>
+                   <div className="mt-6 flex items-center justify-between">
+                       <div>
+                           <p className="text-xs text-slate-500 dark:text-slate-400">Starting from</p>
+                           <p className="text-lg font-bold text-slate-900 dark:text-white">Rp {getMinPrice(concert).toLocaleString('id-ID')}</p>
+                       </div>
+                       <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-primary group-hover:text-white transition-all">
+                          <Icon name="arrow_forward" />
+                       </span>
+                   </div>
+                </div>
+              </Link>
+            ))}
+
+            {concerts.length === 0 && (
+              <div className="col-span-3 text-center py-12 text-slate-500 dark:text-slate-400">
+                <p>No concerts available yet. Check back soon!</p>
               </div>
-              <div className="p-5">
-                 <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
-                        <Icon name="calendar_today" className="text-[18px]" />
-                        <span>Oct 15, 2026 • 8:00 PM</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
-                        <Icon name="location_on" className="text-[18px]" />
-                        <span>O2 Arena, London</span>
-                    </div>
-                 </div>
-                 <div className="mt-6 flex items-center justify-between">
-                     <div>
-                         <p className="text-xs text-slate-500 dark:text-slate-400">Starting from</p>
-                         <p className="text-lg font-bold text-slate-900 dark:text-white">$85.00</p>
-                     </div>
-                     <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-primary group-hover:text-white transition-all">
-                        <Icon name="arrow_forward" />
-                     </span>
-                 </div>
-              </div>
-            </Link>
-             {/* Dummy Concert Card 2 */}
-            <Link href="/concerts/2" className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 block">
-              <div className="relative h-48 sm:h-64 overflow-hidden">
-                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
-                 <img src="https://images.unsplash.com/photo-1470229722913-7c092db62220?auto=format&fit=crop&q=80" alt="Concert" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                 <div className="absolute bottom-4 left-4 z-20">
-                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary-200 border border-primary/30 backdrop-blur-sm mb-2 text-primary">
-                        Rock
-                     </span>
-                     <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">The Midnight Symphony</h3>
-                 </div>
-              </div>
-              <div className="p-5">
-                 <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
-                        <Icon name="calendar_today" className="text-[18px]" />
-                        <span>Nov 02, 2026 • 7:30 PM</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
-                        <Icon name="location_on" className="text-[18px]" />
-                        <span>Madison Square Garden, NY</span>
-                    </div>
-                 </div>
-                 <div className="mt-6 flex items-center justify-between">
-                     <div>
-                         <p className="text-xs text-slate-500 dark:text-slate-400">Starting from</p>
-                         <p className="text-lg font-bold text-slate-900 dark:text-white">$120.00</p>
-                     </div>
-                     <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-primary group-hover:text-white transition-all">
-                        <Icon name="arrow_forward" />
-                     </span>
-                 </div>
-              </div>
-            </Link>
-             {/* Dummy Concert Card 3 */}
-             <Link href="/concerts/3" className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 block">
-              <div className="relative h-48 sm:h-64 overflow-hidden">
-                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
-                 <img src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80" alt="Concert" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                 <div className="absolute bottom-4 left-4 z-20">
-                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary-200 border border-primary/30 backdrop-blur-sm mb-2 text-primary">
-                        Pop
-                     </span>
-                     <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">Summer Vibes World Tour</h3>
-                 </div>
-              </div>
-              <div className="p-5">
-                 <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
-                        <Icon name="calendar_today" className="text-[18px]" />
-                        <span>Aug 24, 2026 • 6:00 PM</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
-                        <Icon name="location_on" className="text-[18px]" />
-                        <span>Stade de France, Paris</span>
-                    </div>
-                 </div>
-                 <div className="mt-6 flex items-center justify-between">
-                     <div>
-                         <p className="text-xs text-slate-500 dark:text-slate-400">Starting from</p>
-                         <p className="text-lg font-bold text-slate-900 dark:text-white">$95.00</p>
-                     </div>
-                     <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-primary group-hover:text-white transition-all">
-                        <Icon name="arrow_forward" />
-                     </span>
-                 </div>
-              </div>
-            </Link>
+            )}
           </div>
         </div>
       </section>

@@ -1,16 +1,29 @@
 import { useMutation } from '@tanstack/react-query';
 import { poster } from '@/lib/fetcher';
-import { useAuthStore, User } from '@/store/auth';
+import { useAuthStore } from '@/store/auth';
+import type { AuthResponse } from '@/lib/types';
+
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+interface RegisterCredentials {
+  email: string;
+  password: string;
+  name: string;
+  phone?: string;
+}
 
 export const useLoginMutation = () => {
   const { login } = useAuthStore();
 
   return useMutation({
-    mutationFn: async (credentials: Record<string, string>) => {
-      return poster<{ user: User; access_token: string; refresh_token: string }>('/auth/login', credentials);
+    mutationFn: (credentials: LoginCredentials) => {
+      return poster<AuthResponse>('/auth/login', credentials);
     },
-    onSuccess: (data: { user: User; access_token: string; refresh_token: string }) => {
-      login(data.user, data.access_token, data.refresh_token);
+    onSuccess: (data) => {
+      login(data.user, data.accessToken, data.refreshToken);
     },
   });
 };
@@ -19,11 +32,28 @@ export const useRegisterMutation = () => {
   const { login } = useAuthStore();
 
   return useMutation({
-    mutationFn: async (credentials: Record<string, string>) => {
-      return poster<{ user: User; access_token: string; refresh_token: string }>('/auth/register', credentials);
+    mutationFn: (credentials: RegisterCredentials) => {
+      return poster<AuthResponse>('/auth/register', credentials);
     },
-    onSuccess: (data: { user: User; access_token: string; refresh_token: string }) => {
-      login(data.user, data.access_token, data.refresh_token);
+    onSuccess: (data) => {
+      login(data.user, data.accessToken, data.refreshToken);
+    },
+  });
+};
+
+export const useLogoutMutation = () => {
+  const { logout } = useAuthStore();
+
+  return useMutation({
+    mutationFn: () => {
+      return poster<{ message: string }>('/auth/logout');
+    },
+    onSuccess: () => {
+      logout();
+    },
+    onError: () => {
+      // Even if the API call fails, clear local state
+      logout();
     },
   });
 };

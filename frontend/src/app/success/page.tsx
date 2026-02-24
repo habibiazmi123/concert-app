@@ -1,9 +1,25 @@
 'use client';
 
-import Link from 'next/link';
-import { Icon } from '@/components/ui/Icon';
+import { Suspense } from 'react';
 
-export default function SuccessPage() {
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { Icon } from '@/components/ui/Icon';
+import { useBooking } from '@/hooks/queries/useBookings';
+
+function SuccessContent() {
+  const searchParams = useSearchParams();
+  const bookingId = searchParams.get('bookingId') || '';
+  const { data: booking } = useBooking(bookingId);
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background-light dark:bg-background-dark min-h-[calc(100vh-130px)]">
         <div className="max-w-md w-full text-center">
@@ -16,30 +32,36 @@ export default function SuccessPage() {
             </h1>
             
             <p className="text-lg text-slate-600 dark:text-slate-400 mb-8">
-                Your payment was successful and your tickets are secured for <span className="font-semibold text-slate-900 dark:text-white">Neon Nights Festival 2026</span>. We&apos;ve sent a confirmation email with your ticket details.
+                Your payment was successful and your tickets are secured
+                {booking?.concert?.title && <> for <span className="font-semibold text-slate-900 dark:text-white">{booking.concert.title}</span></>}
+                . We&apos;ve sent a confirmation email with your ticket details.
             </p>
 
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 mb-8 shadow-sm text-left">
+            {booking && (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 mb-8 shadow-sm text-left">
                  <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-200 dark:border-slate-800 pb-2">Order Details</h3>
                  <dl className="space-y-3 text-sm">
                      <div className="flex justify-between">
-                         <dt className="text-slate-500 dark:text-slate-400">Order Number</dt>
-                         <dd className="font-mono text-slate-900 dark:text-white font-medium">#ORD-982374A</dd>
+                         <dt className="text-slate-500 dark:text-slate-400">Booking ID</dt>
+                         <dd className="font-mono text-slate-900 dark:text-white font-medium text-right">{booking.id.slice(0, 12)}...</dd>
                      </div>
                      <div className="flex justify-between">
                          <dt className="text-slate-500 dark:text-slate-400">Date</dt>
-                         <dd className="text-slate-900 dark:text-white font-medium">Oct 15, 2026</dd>
+                         <dd className="text-slate-900 dark:text-white font-medium">{booking.concert?.date ? formatDate(booking.concert.date) : '—'}</dd>
                      </div>
                      <div className="flex justify-between">
                          <dt className="text-slate-500 dark:text-slate-400">Tickets</dt>
-                         <dd className="text-slate-900 dark:text-white font-medium">2x General Admission</dd>
+                         <dd className="text-slate-900 dark:text-white font-medium">
+                           {booking.items?.map((item) => `${item.quantity}x ${item.ticketType?.name || 'Ticket'}`).join(', ') || '—'}
+                         </dd>
                      </div>
                      <div className="flex justify-between">
                          <dt className="text-slate-500 dark:text-slate-400">Total Paid</dt>
-                         <dd className="text-slate-900 dark:text-white font-medium">$195.00</dd>
+                         <dd className="text-slate-900 dark:text-white font-medium">Rp {booking.totalAmount?.toLocaleString('id-ID')}</dd>
                      </div>
                  </dl>
-            </div>
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                  <Link 
@@ -57,5 +79,13 @@ export default function SuccessPage() {
             </div>
         </div>
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center min-h-[60vh]"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
+      <SuccessContent />
+    </Suspense>
   );
 }

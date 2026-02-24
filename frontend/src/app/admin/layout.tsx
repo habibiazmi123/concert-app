@@ -115,7 +115,7 @@ export default function AdminLayout({
                   <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-surface-dark"></span>
                </div>
                <div className="h-8 w-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary font-medium text-sm">
-                  {user?.firstName?.[0] || 'A'}
+                  {user?.name?.[0] || 'A'}
                </div>
              </div>
           </header>

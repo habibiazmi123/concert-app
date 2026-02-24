@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
+import { useLogoutMutation } from '@/hooks/queries/useAuth';
 import { Icon } from '@/components/ui/Icon';
 
 export function Navbar() {
-  const { isAuthenticated, logout, user } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const { mutate: logoutMutate } = useLogoutMutation();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
@@ -19,12 +21,6 @@ export function Navbar() {
             <nav className="hidden md:flex items-center gap-6">
               <Link href="/concerts" className="text-sm font-medium hover:text-primary transition-colors">
                 Concerts
-              </Link>
-              <Link href="/venues" className="text-sm font-medium hover:text-primary transition-colors">
-                Venues
-              </Link>
-              <Link href="/about" className="text-sm font-medium hover:text-primary transition-colors">
-                About
               </Link>
             </nav>
           </div>
@@ -48,7 +44,7 @@ export function Navbar() {
                    </button>
                    <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl opacity-0 invisible group-hover/user-menu:opacity-100 group-hover/user-menu:visible transition-all duration-200 flex flex-col py-2">
                        <Link href="/profile" className="px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Profile & Bookings</Link>
-                       <button onClick={logout} className="px-4 py-2 text-sm text-left text-red-600 dark:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full">Sign Out</button>
+                       <button onClick={() => logoutMutate()} className="px-4 py-2 text-sm text-left text-red-600 dark:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full">Sign Out</button>
                    </div>
                 </div>
               </>
