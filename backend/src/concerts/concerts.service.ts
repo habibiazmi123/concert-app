@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
-  CreateConcertDto,
-  UpdateConcertDto,
-  AddTicketTypeDto,
-  UpdateTicketTypeDto,
-  ConcertQueryDto,
+  type CreateConcertDto,
+  type UpdateConcertDto,
+  type AddTicketTypeDto,
+  type UpdateTicketTypeDto,
+  type ConcertQueryDto,
 } from './dto/concert.dto';
 import { Prisma } from '@prisma/client';
 

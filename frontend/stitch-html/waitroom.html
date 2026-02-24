@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Smart Queue Waitroom | EventPass</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Spline Sans', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .progress-glow {
+            box-shadow: 0 0 15px rgba(19, 91, 236, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display overflow-hidden">
+<!-- Background Layer: Low-opacity Event Visual -->
+<div class="fixed inset-0 z-0 opacity-20 transition-opacity duration-1000">
+<div class="absolute inset-0 bg-gradient-to-b from-background-dark/80 via-background-dark/40 to-background-dark"></div>
+<img class="w-full h-full object-cover" data-alt="Atmospheric concert crowd with stage lights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdTSDiU-sZoJAo2glVBszHU3jpgrQHyZokZhjVdbZp328nAWMCSuuk7qyumPziNW541fqDGwnR-fq9dldsPeGistLJEUHWB9cyoXvuGLij4oJwyCLck8rvD09_CPUYz5mWe1xwWNQmr7Raq5ukus1ueO_rxxMx2Fbk9_ZkUz0TXaAkgdcqO4LKdtFN_4f71eS1Icqajjy65PdhAEy3ctSQJNwP2p8U0XlcTG-whRoZXAympnMlLwDvtITOJns9Tmsaly8ynca4xH6d"/>
+</div>
+<!-- Top Navigation -->
+<header class="relative z-10 w-full border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between glass-panel">
+<div class="flex items-center gap-2">
+<div class="text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-3xl">confirmation_number</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight">EventPass</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center gap-6">
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">My Bookings</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Support</a>
+</div>
+<div class="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfyU2OKKMiaUayS7YC8yyPaCxB2FWvWVpqrAiJM6pLPiBaemvw1nIpK0VsRk2rlSnaSHifFaw8L5mGA0VAC3xSzVZi1HPFxKDqOX7L5XhdoLvLloWEY4Nc3aCIx9FJUEpiJJci7c-HtIQSifghiU56NdeCuqycD4CCvoFU67C7tfD1mLKX5IcjXLWhZxqVer5QrLRNNqhKLeIxzOZ4stb_T6nKhN6MoqXDo3I2GrF6yj-ovWp6Bbq0v47Eiiy1s3G-qYfViUfClIFh"/>
+</div>
+</div>
+</header>
+<main class="relative z-10 flex-1 flex flex-col items-center justify-center px-4 max-w-4xl mx-auto w-full">
+<!-- Live Status Badge -->
+<div class="mb-8 flex items-center gap-2 bg-primary/10 border border-primary/20 px-3 py-1 rounded-full">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+<span class="text-xs font-bold uppercase tracking-widest text-primary">Live Connection Active</span>
+</div>
+<!-- Main Content Container -->
+<div class="w-full text-center space-y-6">
+<div class="space-y-2">
+<h1 class="text-4xl md:text-5xl font-bold tracking-tight">You're in the queue</h1>
+<p class="text-slate-500 dark:text-slate-400 text-lg max-w-lg mx-auto">
+                    The Taylor Swift | The Eras Tour - London, Wembley Stadium
+                </p>
+<p class="text-sm text-slate-400 dark:text-slate-500">August 15, 2024 • Doors open 17:00</p>
+</div>
+<!-- Queue Progress Module -->
+<div class="glass-panel p-8 rounded-xl space-y-8 w-full">
+<div class="space-y-3">
+<div class="flex justify-between items-end text-sm font-medium">
+<span class="text-slate-400">Queue Progress</span>
+<span class="text-primary text-lg">65%</span>
+</div>
+<div class="w-full bg-slate-200 dark:bg-slate-800 h-3 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full progress-glow relative transition-all duration-500" style="width: 65%;">
+<div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+</div>
+</div>
+<p class="text-xs text-slate-500 italic">Please do not refresh or close this page to keep your spot.</p>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="flex flex-col items-center justify-center p-6 rounded-lg bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+<span class="text-xs uppercase tracking-wider text-slate-500 mb-1">Position in Line</span>
+<div class="text-3xl font-bold">1,245</div>
+<div class="flex items-center gap-1 text-green-500 text-xs font-medium mt-1">
+<span class="material-symbols-outlined text-sm">trending_down</span>
+<span>-150 seats</span>
+</div>
+</div>
+<div class="flex flex-col items-center justify-center p-6 rounded-lg bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+<span class="text-xs uppercase tracking-wider text-slate-500 mb-1">Est. Wait Time</span>
+<div class="text-3xl font-bold">12 mins</div>
+<div class="flex items-center gap-1 text-green-500 text-xs font-medium mt-1">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span>On schedule</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Engagement Content: Mini Carousel -->
+<div class="flex flex-col items-center space-y-4 pt-4">
+<p class="text-sm font-medium text-slate-400">While you wait...</p>
+<div class="flex gap-4 overflow-x-auto pb-4 w-full justify-center">
+<div class="group relative min-w-[200px] h-28 rounded-lg overflow-hidden glass-panel border border-slate-800 flex-shrink-0 cursor-help">
+<img class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" data-alt="A stylized concert stage with bright neon lights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBciI5ps1jbc39fWcNPSYVhMdmO8qIkZyb5cf-75tiZqlDCpNkJGO65IMNrPZ5Y2CMpCbUjtyUPi0T_q1Dtom7eyyP70knbv4aG69ZslgZNvZCKZWPEQRnB2NBATh8n8wQGATztu1Lo39jT5PfvWWI6mw8WvAOFPGL-9g4QXx7nCk7ofAGYA7DOi67zzi5ptEyJqbNnpx_3TuMXcXsHnWA4aUMoWCyrZaY196LJ8OerDOZQ0i7EsmAY54ArP2U-1NGWYkhSlr6lbfF6"/>
+<div class="absolute bottom-2 left-2 right-2">
+<p class="text-[10px] uppercase font-bold tracking-widest text-white shadow-sm">Official Merch</p>
+</div>
+</div>
+<div class="group relative min-w-[200px] h-28 rounded-lg overflow-hidden glass-panel border border-slate-800 flex-shrink-0 cursor-help">
+<img class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" data-alt="Audience hands in the air during a concert" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARppdYhOvv9TATQ8eoXMAzAkjz8bbe8KJM3aYKm6pOUrc08Xr-juUXV86p9lVVhgvpJXNdCkd01RkSQdOZi74WMlHEyMBWPFoDJUxP2cvOrsAKnZ5wfqKT_8vJ9sW8LxBSx6scKNwhjK9MfZqF65cUwWt9yEKlN8rqp30yIC37yV45CL8akDyC-DTr6Qfc4imNHuC_kXWdFL_aFXYlPIiQZr75QlGynLRNZbXNpvdXN44LRt_sweaLeWLVVyLO12pSP7NaY3CR1p8v"/>
+<div class="absolute bottom-2 left-2 right-2">
+<p class="text-[10px] uppercase font-bold tracking-widest text-white shadow-sm">Venue Map</p>
+</div>
+</div>
+<div class="group relative min-w-[200px] h-28 rounded-lg overflow-hidden glass-panel border border-slate-800 flex-shrink-0 cursor-help">
+<img class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" data-alt="Vibrant artist performing on stage with spotlights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKV8X-o22QBTIBprDeK0K3C13_9_PRdHeF8r6w5NU-qNs4_uQplyhra-pb526O6T9CP6710zqoFT0xUyDRFpCFwbRbITSq325hy_51h4Ct4VKhicKYhcoN7uFyUV26eE__ayXbMrmRrmNZt1FyFbhdlYxCkpljt9srfZxS48py4KPch0L0LxwX2j4Kq1J8MD8S6aEakth7J65kd9BgHxdQaozGQXrbeljUl_yfGnDht_0zcspFt-ol2ik6CHLJjMV8r71atBCMyvEH"/>
+<div class="absolute bottom-2 left-2 right-2">
+<p class="text-[10px] uppercase font-bold tracking-widest text-white shadow-sm">Exclusive Video</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Controls -->
+<footer class="relative z-10 p-8 flex flex-col md:flex-row items-center justify-between gap-4 max-w-6xl mx-auto w-full">
+<div class="flex items-center gap-6 text-sm font-medium text-slate-500">
+<a class="hover:text-primary transition-colors" href="#">Queue Rules</a>
+<a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-base">help</span>
+                Need Help?
+            </button>
+<button class="flex items-center gap-2 px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 text-sm font-bold cursor-not-allowed" disabled="">
+                Book Tickets
+                <span class="material-symbols-outlined text-base">lock</span>
+</button>
+</div>
+</footer>
+<!-- Small notification for mobile orientation if needed -->
+<div class="fixed bottom-4 right-4 z-20">
+<div class="bg-background-dark/80 backdrop-blur-md border border-slate-800 p-3 rounded-lg flex items-center gap-3 text-xs shadow-xl">
+<span class="material-symbols-outlined text-primary">info</span>
+<span>Estimated entry: 14:12 GMT</span>
+</div>
+</div>
+</body></html>

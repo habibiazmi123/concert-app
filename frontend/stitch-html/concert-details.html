@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Concert Details &amp; Booking | LivePass</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#135bec",
+            "background-light": "#f6f6f8",
+            "background-dark": "#101622",
+          },
+          fontFamily: {
+            "display": ["Spline Sans", "sans-serif"]
+          },
+          borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Spline Sans', sans-serif;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .hero-gradient {
+      background: linear-gradient(180deg, rgba(16, 22, 34, 0) 0%, rgba(16, 22, 34, 0.8) 70%, rgba(16, 22, 34, 1) 100%);
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased font-display">
+<!-- Top Navigation -->
+<header class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between items-center h-16">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-3xl">confirmation_number</span>
+<span class="text-xl font-bold tracking-tight dark:text-white">LivePass</span>
+</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Concerts</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Sports</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Theater</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Festivals</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden lg:flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-1.5 border border-transparent focus-within:border-primary transition-all">
+<span class="material-symbols-outlined text-slate-400 text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-64 placeholder:text-slate-500" placeholder="Search artists or venues" type="text"/>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-all">Sign In</button>
+</div>
+</div>
+</div>
+</header>
+<main>
+<!-- Hero Section -->
+<section class="relative h-[80vh] w-full overflow-hidden">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Dynamic concert stage with artist performing in front of massive crowd" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB87rK2q58dN80ouMO9kTQ87X9dXgsAUXO5um8F5QIZqgbvwiGswHc7GVftBSVr6aLyuch_ZIenIZGcKd7pQQLsxqaWnBnHK111MKUZZi2oX1rAyfpaoeHSEyVlSP0Wrmxi3vAYiYRgUBHWTNsdaaOBP9bwPew5-ts1K2Y3k8n934MQhFEfprPCTaVhN08awQ7v4q0gM6RUVu_ddxxxg8f_D2Ti7z6EC4cXYXzX00UdES-wWBZzzFVX27KJ8-CFkh4iWhnARRzqbuHo');"></div>
+<div class="absolute inset-0 hero-gradient"></div>
+<div class="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-12">
+<div class="max-w-3xl">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-bold uppercase tracking-widest mb-4">
+<span class="material-symbols-outlined text-xs">local_fire_department</span> Selling Fast
+          </div>
+<h1 class="text-5xl md:text-7xl font-black text-white leading-tight mb-4 tracking-tight">The Midnight Echo: <br/><span class="text-primary">World Tour 2024</span></h1>
+<p class="text-lg md:text-xl text-slate-300 mb-8 max-w-2xl font-light leading-relaxed">Experience the most anticipated tour of the year. An immersive audio-visual journey live at the Grand National Arena featuring special guest performances.</p>
+<div class="flex flex-wrap gap-4">
+<button class="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-xl font-bold text-lg flex items-center gap-2 shadow-lg shadow-primary/20 transition-all">
+<span class="material-symbols-outlined">shopping_cart</span> Book Now
+            </button>
+<button class="bg-slate-100/10 hover:bg-slate-100/20 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-xl font-bold text-lg transition-all">
+              View Trailer
+            </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Event Info Bar -->
+<section class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">calendar_today</span>
+</div>
+<div>
+<p class="text-xs font-bold uppercase text-slate-500 tracking-wider">Date</p>
+<p class="font-semibold">October 24, 2024</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">schedule</span>
+</div>
+<div>
+<p class="text-xs font-bold uppercase text-slate-500 tracking-wider">Time</p>
+<p class="font-semibold">Doors 7:00 PM • Show 8:30 PM</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">location_on</span>
+</div>
+<div>
+<p class="text-xs font-bold uppercase text-slate-500 tracking-wider">Venue</p>
+<p class="font-semibold">Grand National Arena</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">map</span>
+</div>
+<div>
+<p class="text-xs font-bold uppercase text-slate-500 tracking-wider">Location</p>
+<p class="font-semibold">Los Angeles, CA</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Content Sections -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-16">
+<!-- Left: Details and Seat Map -->
+<div class="lg:col-span-2 space-y-16">
+<div>
+<h2 class="text-3xl font-bold mb-6">Event Experience</h2>
+<div class="prose dark:prose-invert max-w-none text-slate-600 dark:text-slate-400 space-y-4">
+<p>Join us for an unforgettable evening with The Midnight Echo. This tour features state-of-the-art lighting, unreleased tracks, and a full orchestral backing. Tickets are limited and selling fast for this exclusive one-night engagement.</p>
+<p>The Grand National Arena will be transformed with a custom 360-degree stage, ensuring every fan has a perfect view of the performance. Expect a high-energy setlist spanning their entire discography plus world-premiere visuals.</p>
+</div>
+</div>
+<!-- Seat Map Placeholder -->
+<div>
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-3xl font-bold">Select Your Seats</h2>
+<div class="flex items-center gap-4 text-xs font-semibold uppercase text-slate-500">
+<span class="flex items-center gap-1"><span class="size-3 rounded-full bg-primary"></span> VIP</span>
+<span class="flex items-center gap-1"><span class="size-3 rounded-full bg-blue-400"></span> Premium</span>
+<span class="flex items-center gap-1"><span class="size-3 rounded-full bg-slate-400"></span> Standard</span>
+</div>
+</div>
+<div class="aspect-video bg-slate-100 dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 flex items-center justify-center relative overflow-hidden group">
+<div class="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-60 transition-opacity" data-alt="Simplified vector layout of concert arena seating blocks" data-location="Los Angeles" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCsnjQyn9um-caAR3OVN1WRO90g_wNb6FNfie7O0owqY12wd23qIIkPyejX1rDuAEobo7NYDYcD0GcrKqQMsX1rT2U1IwmNqVgr02LkBkHTSi987RDD3VipJwtr3X4as50yug2AhrFOFxbYnmjly_2H3G-abXlX1mPRzfOYFHIGgUvP2lnPIjRRq-TjkwgtsOUyFxXYKSJW9ZDNpbEFsYohTyahIGjcWdETpFJuvNEqpL44WRVD7-WDWzsn50QNCVKVP5FtuZVtcwvS');"></div>
+<div class="relative z-10 flex flex-col items-center gap-3 text-center p-8">
+<span class="material-symbols-outlined text-6xl text-primary/40">map</span>
+<p class="text-slate-500 font-medium">Interactive Venue Map Loading...</p>
+<button class="text-primary font-bold hover:underline">Launch Map Explorer</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right: Pricing Table & Sidebar -->
+<div class="space-y-8">
+<div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5">
+<h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">sell</span> Ticket Packages
+            </h3>
+<div class="space-y-4">
+<!-- Tier 1 -->
+<div class="group relative bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-primary transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="font-bold text-lg">VIP Experience</h4>
+<p class="text-xs text-slate-500">Front Row / Meet &amp; Greet</p>
+</div>
+<span class="text-2xl font-black text-primary">$499</span>
+</div>
+<ul class="text-xs text-slate-500 space-y-1 mt-2">
+<li class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">check_circle</span> Backstage tour</li>
+<li class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">check_circle</span> Exclusive merchandise</li>
+</ul>
+</div>
+<!-- Tier 2 -->
+<div class="group relative bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-primary transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="font-bold text-lg">Floor Seats</h4>
+<p class="text-xs text-slate-500">Center View / Premium Audio</p>
+</div>
+<span class="text-2xl font-black text-primary">$249</span>
+</div>
+<ul class="text-xs text-slate-500 space-y-1 mt-2">
+<li class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">check_circle</span> Early entry</li>
+<li class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">check_circle</span> Commemorative poster</li>
+</ul>
+</div>
+<!-- Tier 3 -->
+<div class="group relative bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-primary transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="font-bold text-lg">General Admission</h4>
+<p class="text-xs text-slate-500">Standard Seating</p>
+</div>
+<span class="text-2xl font-black text-primary">$89</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-primary/20">
+              Go to Checkout
+            </button>
+<p class="text-center text-[10px] text-slate-500 mt-4 uppercase font-bold tracking-widest">Prices exclude local taxes &amp; fees</p>
+</div>
+<!-- Trust Box -->
+<div class="bg-primary/5 rounded-2xl p-6 border border-primary/10">
+<h4 class="font-bold mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">verified_user</span> Verified Tickets
+            </h4>
+<div class="space-y-4">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-xl">security</span>
+<p class="text-xs text-slate-500">100% Buyer Guarantee. Our tickets are 100% authentic and delivered on time.</p>
+</div>
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-xl">qr_code_2</span>
+<p class="text-xs text-slate-500">Digital-only entry. Access your tickets directly from the LivePass app.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Venue Location Map -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-slate-200 dark:border-slate-800">
+<div class="flex flex-col md:flex-row gap-12 items-center">
+<div class="flex-1 space-y-6">
+<h2 class="text-3xl font-bold">The Venue</h2>
+<div class="space-y-4">
+<p class="text-slate-600 dark:text-slate-400">The Grand National Arena is one of the premier concert venues in Southern California, known for its incredible acoustics and accessibility.</p>
+<address class="not-italic">
+<p class="font-bold">Grand National Arena</p>
+<p class="text-slate-500">1200 Victory Blvd<br/>Los Angeles, CA 90015</p>
+</address>
+<div class="flex gap-2">
+<button class="text-primary font-bold text-sm flex items-center gap-1 hover:underline">
+<span class="material-symbols-outlined text-sm">directions</span> Get Directions
+              </button>
+<span class="text-slate-300">|</span>
+<button class="text-primary font-bold text-sm flex items-center gap-1 hover:underline">
+<span class="material-symbols-outlined text-sm">local_parking</span> Parking Info
+              </button>
+</div>
+</div>
+</div>
+<div class="flex-1 w-full h-[300px] bg-slate-100 dark:bg-slate-900 rounded-2xl overflow-hidden grayscale border border-slate-200 dark:border-slate-800">
+<div class="w-full h-full bg-cover bg-center" data-alt="Satellite map view of Grand National Arena and surrounding parking lots" data-location="Los Angeles, California" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCsnjQyn9um-caAR3OVN1WRO90g_wNb6FNfie7O0owqY12wd23qIIkPyejX1rDuAEobo7NYDYcD0GcrKqQMsX1rT2U1IwmNqVgr02LkBkHTSi987RDD3VipJwtr3X4as50yug2AhrFOFxbYnmjly_2H3G-abXlX1mPRzfOYFHIGgUvP2lnPIjRRq-TjkwgtsOUyFxXYKSJW9ZDNpbEFsYohTyahIGjcWdETpFJuvNEqpL44WRVD7-WDWzsn50QNCVKVP5FtuZVtcwvS');"></div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-900 py-12">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+<div class="col-span-2 md:col-span-1">
+<div class="flex items-center gap-2 text-primary mb-4">
+<span class="material-symbols-outlined">confirmation_number</span>
+<span class="text-lg font-bold dark:text-white">LivePass</span>
+</div>
+<p class="text-sm text-slate-500">The premier destination for concert experiences and live entertainment booking.</p>
+</div>
+<div>
+<h5 class="font-bold mb-4 text-sm uppercase tracking-widest text-slate-400">Explore</h5>
+<ul class="text-sm space-y-2 text-slate-500">
+<li><a class="hover:text-primary transition-colors" href="#">Popular Tours</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Venues Near You</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Gift Cards</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-bold mb-4 text-sm uppercase tracking-widest text-slate-400">Support</h5>
+<ul class="text-sm space-y-2 text-slate-500">
+<li><a class="hover:text-primary transition-colors" href="#">Help Center</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Refund Policy</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Contact Us</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-bold mb-4 text-sm uppercase tracking-widest text-slate-400">Legal</h5>
+<ul class="text-sm space-y-2 text-slate-500">
+<li><a class="hover:text-primary transition-colors" href="#">Terms of Service</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Privacy Policy</a></li>
+</ul>
+</div>
+</div>
+<div class="pt-8 border-t border-slate-100 dark:border-slate-900 flex flex-col md:flex-row justify-between gap-4 text-sm text-slate-500">
+<p>© 2024 LivePass Entertainment Group. All rights reserved.</p>
+<div class="flex gap-6">
+<a class="hover:text-primary" href="#"><span class="material-symbols-outlined text-lg">public</span></a>
+<a class="hover:text-primary" href="#"><span class="material-symbols-outlined text-lg">brand_awareness</span></a>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

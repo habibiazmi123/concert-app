@@ -1,0 +1,30 @@
+enum ConcertStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+model Concert {
+  id          String        @id @default(uuid())
+  title       String
+  description String
+  artist      String
+  venue       String
+  address     String
+  city        String
+  date        DateTime
+  imageUrl    String?
+  status      ConcertStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  ticketTypes TicketType[]
+  bookings    Booking[]
+  queueJobs   QueueJob[]
+
+  @@index([date])
+  @@index([status])
+  @@index([city])
+  @@map("concerts")
+}

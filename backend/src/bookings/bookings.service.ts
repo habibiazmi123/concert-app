@@ -10,8 +10,8 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateBookingDto, BookingQueryDto } from './dto/booking.dto';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
+import { type CreateBookingDto, type BookingQueryDto } from './dto/booking.dto';
 
 @Injectable()
 export class BookingsService {
@@ -166,12 +166,12 @@ export class BookingsService {
       // Execute atomic transaction
       const booking = await this.prisma.$transaction(async (tx) => {
         // Verify seat availability inside transaction
-        let totalAmount = new Decimal(0);
+        let totalAmount = new Prisma.Decimal(0);
         const bookingItemsData: Array<{
           ticketTypeId: string;
           quantity: number;
-          unitPrice: Decimal;
-          subtotal: Decimal;
+          unitPrice: Prisma.Decimal;
+          subtotal: Prisma.Decimal;
         }> = [];
 
         for (const item of items) {

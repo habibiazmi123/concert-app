@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -8,13 +6,13 @@ services:
     ports:
       - '5432:5432'
     environment:
-      POSTGRES_USER: concert_user
-      POSTGRES_PASSWORD: concert_pass
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: teuingatuh
       POSTGRES_DB: concert_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U concert_user -d concert_db']
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d concert_db']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,7 +23,7 @@ services:
     restart: unless-stopped
     ports:
       - '6379:6379'
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction
     volumes:
       - redis_data:/data
     healthcheck:

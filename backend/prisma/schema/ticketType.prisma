@@ -1,0 +1,18 @@
+model TicketType {
+  id             String   @id @default(uuid())
+  concertId      String
+  name           String
+  description    String?
+  price          Decimal  @db.Decimal(12, 2)
+  totalSeats     Int
+  availableSeats Int
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  concert      Concert       @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  bookingItems BookingItem[]
+
+  @@index([concertId])
+  @@map("ticket_types")
+}

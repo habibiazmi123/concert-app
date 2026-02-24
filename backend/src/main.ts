@@ -5,6 +5,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { Logger } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -15,6 +16,21 @@ async function bootstrap() {
 
   // Global prefix
   app.setGlobalPrefix('api');
+
+  // Swagger / OpenAPI
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Concert Booking API')
+    .setDescription(
+      'API documentation for the Concert Ticket Booking platform. ' +
+      'Supports user authentication, concert browsing, ticket booking with queue-based concurrency, ' +
+      'payments, and admin management.',
+    )
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document);
 
   // CORS
   app.enableCors({
@@ -32,6 +48,7 @@ async function bootstrap() {
 
   await app.listen(port);
   logger.log(`🎵 Concert Booking API running on http://localhost:${port}/api`);
+  logger.log(`📖 Swagger docs available at http://localhost:${port}/api/docs`);
   logger.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
 }
 
