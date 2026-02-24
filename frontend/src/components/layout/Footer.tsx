@@ -1,7 +1,15 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
 
 export function Footer() {
+  const pathname = usePathname();
+
+  // Hide Footer on admin routes (admin has its own layout)
+  if (pathname.startsWith('/admin')) return null;
+
   return (
     <footer className="border-t border-slate-200 dark:border-slate-800 bg-background-light dark:bg-background-dark py-12 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

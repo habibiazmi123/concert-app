@@ -40,10 +40,9 @@ export class UsersController {
   @ApiBody({ type: UpdateUserBody })
   @ApiResponse({ status: 200, description: 'Profile updated' })
   @ApiResponse({ status: 400, description: 'Validation error' })
-  @UsePipes(new ZodValidationPipe(updateUserSchema))
   async updateProfile(
     @GetUser('id') userId: string,
-    @Body() dto: UpdateUserDto,
+    @Body(new ZodValidationPipe(updateUserSchema)) dto: UpdateUserDto,
   ) {
     return this.usersService.updateProfile(userId, dto);
   }

@@ -1,13 +1,18 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { useLogoutMutation } from '@/hooks/queries/useAuth';
 import { Icon } from '@/components/ui/Icon';
 
 export function Navbar() {
+  const pathname = usePathname();
   const { isAuthenticated, user } = useAuthStore();
   const { mutate: logoutMutate } = useLogoutMutation();
+
+  // Hide Navbar on admin routes (admin has its own layout)
+  if (pathname.startsWith('/admin')) return null;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">

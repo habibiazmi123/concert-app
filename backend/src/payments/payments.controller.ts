@@ -5,7 +5,6 @@ import {
   Body,
   Param,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -34,10 +33,9 @@ export class PaymentsController {
   @ApiBody({ type: CreatePaymentBody })
   @ApiResponse({ status: 201, description: 'Payment processed' })
   @ApiResponse({ status: 400, description: 'Validation error or booking not payable' })
-  @UsePipes(new ZodValidationPipe(createPaymentSchema))
   async processPayment(
     @GetUser('id') userId: string,
-    @Body() dto: CreatePaymentDto,
+    @Body(new ZodValidationPipe(createPaymentSchema)) dto: CreatePaymentDto,
   ) {
     return this.paymentsService.processPayment(userId, dto);
   }

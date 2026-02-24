@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 import { Icon } from '@/components/ui/Icon';
 import { useQueueStatus } from '@/hooks/queries/useBookings';
 
@@ -13,28 +12,41 @@ function WaitroomContent() {
 
   const { data: queueStatus, isLoading } = useQueueStatus(jobId, !!jobId);
 
-  const status = queueStatus?.status || 'waiting';
-  const position = queueStatus?.position ?? 0;
+  const status = queueStatus?.status || 'WAITING';
+  const position = queueStatus?.position ?? null;
+  const bookingId = queueStatus?.bookingId;
 
   // Redirect when queue processing is complete
   useEffect(() => {
-    if (status === 'completed' && queueStatus?.bookingId) {
-      router.push(`/checkout?bookingId=${queueStatus.bookingId}`);
+    if (status === 'COMPLETED' && bookingId) {
+      router.push(`/checkout?bookingId=${bookingId}`);
     }
-  }, [status, queueStatus?.bookingId, router]);
+  }, [status, bookingId, router]);
 
   // Calculate progress based on status
   const getProgress = () => {
-    if (status === 'completed') return 100;
-    if (status === 'active') return 80;
-    if (status === 'waiting' || status === 'delayed') {
-      if (position <= 0) return 50;
-      return Math.max(10, Math.min(60, 60 - position * 5));
+    if (status === 'COMPLETED') return 100;
+    if (status === 'PROCESSING') return 75;
+    if (status === 'WAITING') {
+      if (position === null || position <= 1) return 50;
+      // The closer to position 1, the higher the progress
+      return Math.max(10, Math.min(50, 50 - (position - 1) * 5));
     }
     return 0;
   };
 
   const progress = getProgress();
+
+  // Status display text
+  const statusLabel = (() => {
+    switch (status) {
+      case 'WAITING': return 'In Queue';
+      case 'PROCESSING': return 'Processing...';
+      case 'COMPLETED': return 'Redirecting...';
+      case 'FAILED': return 'Failed';
+      default: return status;
+    }
+  })();
 
   if (!jobId) {
     return (
@@ -48,11 +60,11 @@ function WaitroomContent() {
     );
   }
 
-  if (status === 'failed') {
+  if (status === 'FAILED') {
     return (
       <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Icon name="cancel" className="text-5xl text-red-500" />
-        <p className="text-lg text-slate-600 dark:text-slate-400">Booking failed. {queueStatus?.error || 'Please try again.'}</p>
+        <p className="text-lg text-slate-600 dark:text-slate-400">Booking failed. {queueStatus?.errorMsg || 'Please try again.'}</p>
         <button onClick={() => router.push('/concerts')} className="text-primary hover:underline">
           Back to concerts
         </button>
@@ -65,11 +77,10 @@ function WaitroomContent() {
       {/* Background Decor */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-b from-background-dark/80 via-background-dark/40 to-background-dark dark:from-background-dark/80 dark:via-background-dark/40 dark:to-background-dark" />
-         <Image
+         <img
             src="https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&q=80"
-            alt="Atmospheric concert"
-            fill
-            className="object-cover"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
           />
       </div>
 
@@ -79,24 +90,36 @@ function WaitroomContent() {
 
         <div className="text-center mb-10">
            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/20 border border-primary/30 mb-6 shadow-[0_0_20px_rgba(19,91,236,0.2)]">
-               <Icon name="hourglass_top" className="text-4xl text-primary animate-pulse" />
+               {status === 'COMPLETED' ? (
+                 <Icon name="check_circle" className="text-4xl text-green-400" />
+               ) : status === 'PROCESSING' ? (
+                 <Icon name="sync" className="text-4xl text-primary animate-spin" />
+               ) : (
+                 <Icon name="hourglass_top" className="text-4xl text-primary animate-pulse" />
+               )}
            </div>
-           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">You are in the queue</h1>
-           <p className="text-slate-300 text-lg">Please do not refresh this page. You will be redirected automatically.</p>
+           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
+             {status === 'COMPLETED' ? 'Booking Confirmed!' : status === 'PROCESSING' ? 'Processing Your Booking' : 'You are in the queue'}
+           </h1>
+           <p className="text-slate-300 text-lg">
+             {status === 'COMPLETED' ? 'Redirecting to checkout...' : status === 'PROCESSING' ? 'Securing your seats now...' : 'Please do not refresh this page. You will be redirected automatically.'}
+           </p>
         </div>
 
         {/* Status Cards */}
         <div className="grid grid-cols-2 gap-4 mb-10">
             <div className="bg-black/20 dark:bg-black/40 border border-white/5 rounded-2xl p-6 text-center backdrop-blur-md">
                 <p className="text-sm text-slate-400 font-medium uppercase tracking-wider mb-2">Status</p>
-                <p className="text-2xl font-bold text-white tracking-tight capitalize">
-                  {isLoading ? '...' : status}
+                <p className={`text-2xl font-bold tracking-tight ${status === 'COMPLETED' ? 'text-green-400' : status === 'PROCESSING' ? 'text-yellow-400' : 'text-white'}`}>
+                  {isLoading ? '...' : statusLabel}
                 </p>
             </div>
              <div className="bg-black/20 dark:bg-black/40 border border-white/5 rounded-2xl p-6 text-center backdrop-blur-md">
-                <p className="text-sm text-slate-400 font-medium uppercase tracking-wider mb-2">Position</p>
+                <p className="text-sm text-slate-400 font-medium uppercase tracking-wider mb-2">
+                  {position !== null && position > 0 ? 'People Ahead' : 'Position'}
+                </p>
                 <p className="text-4xl font-bold text-white tracking-tight">
-                  {isLoading ? '...' : position > 0 ? `#${position}` : '—'}
+                  {isLoading ? '...' : position !== null && position > 0 ? position : '—'}
                 </p>
             </div>
         </div>
@@ -114,7 +137,7 @@ function WaitroomContent() {
                  />
             </div>
             <p className="text-xs text-slate-400 mt-3 text-center">
-                 Your queue job ID: <span className="font-mono text-slate-300">{jobId}</span>
+                 Queue ID: <span className="font-mono text-slate-300">{jobId.slice(0, 8)}...</span>
             </p>
         </div>
       </div>

@@ -1,32 +1,37 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useLoginMutation } from '@/hooks/queries/useAuth';
 import { Icon } from '@/components/ui/Icon';
+import { showErrorToast, showSuccessToast } from '@/lib/toast';
+import { loginSchema, type LoginFormData } from '@/lib/schemas';
 
 export default function LoginPage() {
   const router = useRouter();
   const { mutate: login, isPending } = useLoginMutation();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
 
-    login(
-      { email, password },
-      {
-        onSuccess: () => {
-          alert('Logged in successfully!');
-          router.push('/');
-        },
-        onError: (error: unknown) => {
-          alert((error as Error).message || 'Failed to login');
-        },
-      }
-    );
+  const onSubmit = (data: LoginFormData) => {
+    login(data, {
+      onSuccess: () => {
+        showSuccessToast('Welcome back!', 'Logged in successfully');
+        router.push('/');
+      },
+      onError: (error) => {
+        console.log(1)
+        showErrorToast(error, 'Login failed');
+      },
+    });
   };
 
   return (
@@ -48,7 +53,7 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white dark:bg-slate-900 py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-slate-200 dark:border-slate-800">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Email address
@@ -59,16 +64,14 @@ export default function LoginPage() {
                 </div>
                 <input
                   id="email"
-                  name="email"
                   type="email"
                   autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  {...register('email')}
+                  className={`appearance-none block w-full pl-10 pr-3 py-2 border ${errors.email ? 'border-red-500' : 'border-slate-300 dark:border-slate-700'} rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white`}
                   placeholder="you@example.com"
                 />
               </div>
+              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
             </div>
 
             <div>
@@ -81,16 +84,14 @@ export default function LoginPage() {
                 </div>
                 <input
                   id="password"
-                  name="password"
                   type="password"
                   autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  {...register('password')}
+                  className={`appearance-none block w-full pl-10 pr-3 py-2 border ${errors.password ? 'border-red-500' : 'border-slate-300 dark:border-slate-700'} rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white`}
                   placeholder="••••••••"
                 />
               </div>
+              {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>}
             </div>
 
             <div>

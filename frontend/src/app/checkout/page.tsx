@@ -2,9 +2,13 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Icon } from '@/components/ui/Icon';
 import { useBooking } from '@/hooks/queries/useBookings';
 import { useProcessPaymentMutation } from '@/hooks/queries/usePayments';
+import { showErrorToast, showSuccessToast } from '@/lib/toast';
+import { paymentSchema, type PaymentFormData } from '@/lib/schemas';
 
 function CheckoutContent() {
   const router = useRouter();
@@ -14,11 +18,13 @@ function CheckoutContent() {
   const processPayment = useProcessPaymentMutation();
 
   const [paymentMethod, setPaymentMethod] = useState('card');
-  const [formData, setFormData] = useState({
-      name: '',
-      cardNumber: '',
-      expiry: '',
-      cvc: ''
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<PaymentFormData>({
+    resolver: zodResolver(paymentSchema),
   });
 
   // Countdown timer for booking expiration
@@ -40,9 +46,7 @@ function CheckoutContent() {
     return () => clearInterval(interval);
   }, [booking?.expiresAt]);
 
-  const handleCheckout = (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const submitPayment = () => {
     processPayment.mutate(
       {
         bookingId,
@@ -50,21 +54,24 @@ function CheckoutContent() {
       },
       {
         onSuccess: () => {
+          showSuccessToast('Payment successful!', 'Your tickets are confirmed');
           router.push(`/success?bookingId=${bookingId}`);
         },
-        onError: (error: unknown) => {
-          alert((error as { message?: string }).message || 'Payment failed');
+        onError: (error) => {
+          showErrorToast(error, 'Payment failed');
         },
       }
     );
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData(prev => ({
-          ...prev,
-          [e.target.name]: e.target.value
-      }))
-  }
+  const onFormSubmit = (_data: PaymentFormData) => {
+    submitPayment();
+  };
+
+  const handleEwalletSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submitPayment();
+  };
 
   if (!bookingId) {
     return (
@@ -128,7 +135,7 @@ function CheckoutContent() {
                         </button>
                    </div>
 
-                   <form onSubmit={handleCheckout} className="space-y-6">
+                   <form onSubmit={paymentMethod === 'card' ? handleSubmit(onFormSubmit) : handleEwalletSubmit} className="space-y-6">
                         {paymentMethod === 'card' && (
                           <>
                             <div>
@@ -136,13 +143,11 @@ function CheckoutContent() {
                                 <input 
                                     type="text" 
                                     id="name" 
-                                    name="name" 
-                                    required
-                                    value={formData.name}
-                                    onChange={handleChange}
                                     placeholder="John Doe" 
-                                    className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                                    {...register('name')}
+                                    className={`w-full px-4 py-3 rounded-lg border ${errors.name ? 'border-red-500' : 'border-slate-300 dark:border-slate-700'} bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all`}
                                 />
+                                {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
                             </div>
                             <div>
                                 <label htmlFor="cardNumber" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Card Number</label>
@@ -151,14 +156,12 @@ function CheckoutContent() {
                                     <input 
                                         type="text" 
                                         id="cardNumber" 
-                                        name="cardNumber" 
-                                        required
-                                        value={formData.cardNumber}
-                                        onChange={handleChange}
                                         placeholder="0000 0000 0000 0000" 
-                                        className="w-full pl-12 pr-4 py-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all tracking-widest font-mono"
+                                        {...register('cardNumber')}
+                                        className={`w-full pl-12 pr-4 py-3 rounded-lg border ${errors.cardNumber ? 'border-red-500' : 'border-slate-300 dark:border-slate-700'} bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all tracking-widest font-mono`}
                                     />
                                 </div>
+                                {errors.cardNumber && <p className="mt-1 text-sm text-red-500">{errors.cardNumber.message}</p>}
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                  <div>
@@ -166,13 +169,11 @@ function CheckoutContent() {
                                     <input 
                                         type="text" 
                                         id="expiry" 
-                                        name="expiry" 
-                                        required
-                                        value={formData.expiry}
-                                        onChange={handleChange}
                                         placeholder="MM/YY" 
-                                        className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-mono"
+                                        {...register('expiry')}
+                                        className={`w-full px-4 py-3 rounded-lg border ${errors.expiry ? 'border-red-500' : 'border-slate-300 dark:border-slate-700'} bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-mono`}
                                     />
+                                    {errors.expiry && <p className="mt-1 text-sm text-red-500">{errors.expiry.message}</p>}
                                 </div>
                                 <div>
                                     <label htmlFor="cvc" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">CVC</label>
@@ -180,15 +181,13 @@ function CheckoutContent() {
                                         <input 
                                             type="text" 
                                             id="cvc" 
-                                            name="cvc" 
-                                            required
-                                            value={formData.cvc}
-                                            onChange={handleChange}
                                             placeholder="123" 
-                                            className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-mono"
+                                            {...register('cvc')}
+                                            className={`w-full px-4 py-3 rounded-lg border ${errors.cvc ? 'border-red-500' : 'border-slate-300 dark:border-slate-700'} bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-mono`}
                                         />
                                         <Icon name="help" className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm cursor-help" />
                                     </div>
+                                    {errors.cvc && <p className="mt-1 text-sm text-red-500">{errors.cvc.message}</p>}
                                 </div>
                             </div>
                           </>

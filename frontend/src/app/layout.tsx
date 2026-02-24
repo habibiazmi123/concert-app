@@ -5,6 +5,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import QueryProvider from '@/providers/QueryProvider';
 import { AuthInitializer } from '@/components/auth/AuthInitializer';
+import { Toaster } from 'sonner';
 
 import './globals.css';
 
@@ -36,6 +37,7 @@ export default function RootLayout({
             <main className="flex-1 flex flex-col">{children}</main>
             <Footer />
           </AuthInitializer>
+          <Toaster theme="dark" position="top-right" richColors closeButton />
         </QueryProvider>
       </body>
     </html>

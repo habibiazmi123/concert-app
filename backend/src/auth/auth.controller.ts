@@ -55,8 +55,7 @@ export class AuthController {
   @ApiBody({ type: LoginBody })
   @ApiResponse({ status: 200, description: 'Login successful', type: AuthTokenResponse })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  @UsePipes(new ZodValidationPipe(loginSchema))
-  async login(@Body() dto: LoginDto) {
+  async login(@Body(new ZodValidationPipe(loginSchema)) dto: LoginDto) {
     return this.authService.login(dto);
   }
 
@@ -66,8 +65,7 @@ export class AuthController {
   @ApiBody({ type: RefreshTokenBody })
   @ApiResponse({ status: 200, description: 'Tokens refreshed', type: AuthTokenResponse })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
-  @UsePipes(new ZodValidationPipe(refreshTokenSchema))
-  async refreshTokens(@Body() dto: RefreshTokenDto) {
+  async refreshTokens(@Body(new ZodValidationPipe(refreshTokenSchema)) dto: RefreshTokenDto) {
     return this.authService.refreshTokens(dto.refreshToken);
   }
 

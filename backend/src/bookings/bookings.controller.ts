@@ -6,7 +6,6 @@ import {
   Param,
   Query,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -41,10 +40,9 @@ export class BookingsController {
   @ApiBody({ type: CreateBookingBody })
   @ApiResponse({ status: 201, description: 'Booking enqueued — returns queue job ID' })
   @ApiResponse({ status: 400, description: 'Validation error' })
-  @UsePipes(new ZodValidationPipe(createBookingSchema))
   async createBooking(
     @GetUser('id') userId: string,
-    @Body() dto: CreateBookingDto,
+    @Body(new ZodValidationPipe(createBookingSchema)) dto: CreateBookingDto,
   ) {
     return this.bookingsService.enqueueBooking(userId, dto);
   }

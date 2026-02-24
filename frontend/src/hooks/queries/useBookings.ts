@@ -32,10 +32,9 @@ export const useQueueStatus = (queueJobId: string, enabled = true) => {
     queryFn: () => fetcher<QueueStatus>(`/bookings/queue-status/${queueJobId}`),
     enabled: !!queueJobId && enabled,
     refetchInterval: (query) => {
-      // Poll every 2 seconds while waiting, stop when completed/failed
       const status = query.state.data?.status;
-      if (status === 'completed' || status === 'failed') return false;
-      return 2000;
+      if (status === 'COMPLETED' || status === 'FAILED') return false;
+      return 1000; // Poll every 1 second
     },
   });
 };

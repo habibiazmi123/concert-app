@@ -20,6 +20,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | string[] = 'Internal server error';
     let error = 'Internal Server Error';
+    let errors: unknown = undefined;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -31,6 +32,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const resp = exceptionResponse as any;
         message = resp.message || exception.message;
         error = resp.error || error;
+        // Pass through Zod validation errors array
+        if (resp.errors) {
+          errors = resp.errors;
+        }
       }
     } else if (exception instanceof Error) {
       message = exception.message;
@@ -40,13 +45,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
       );
     }
 
-    response.status(status).json({
+    const body: Record<string, unknown> = {
       success: false,
       statusCode: status,
       error,
       message,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-    });
+    };
+
+    if (errors) {
+      body.errors = errors;
+    }
+
+    response.status(status).json(body);
   }
 }

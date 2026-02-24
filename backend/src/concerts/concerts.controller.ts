@@ -85,8 +85,7 @@ export class ConcertsController {
   @ApiResponse({ status: 201, description: 'Concert created' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden — Admin only' })
-  @UsePipes(new ZodValidationPipe(createConcertSchema))
-  async create(@Body() dto: CreateConcertDto) {
+  async create(@Body(new ZodValidationPipe(createConcertSchema)) dto: CreateConcertDto) {
     return this.concertsService.create(dto);
   }
 
@@ -116,8 +115,7 @@ export class ConcertsController {
   @ApiBody({ type: UpdateConcertBody })
   @ApiResponse({ status: 200, description: 'Concert updated' })
   @ApiResponse({ status: 404, description: 'Concert not found' })
-  @UsePipes(new ZodValidationPipe(updateConcertSchema))
-  async update(@Param('id') id: string, @Body() dto: UpdateConcertDto) {
+  async update(@Param('id') id: string, @Body(new ZodValidationPipe(updateConcertSchema)) dto: UpdateConcertDto) {
     return this.concertsService.update(id, dto);
   }
 
@@ -156,10 +154,9 @@ export class ConcertsController {
   @ApiParam({ name: 'ticketTypeId', description: 'Ticket Type ID' })
   @ApiBody({ type: UpdateTicketTypeBody })
   @ApiResponse({ status: 200, description: 'Ticket type updated' })
-  @UsePipes(new ZodValidationPipe(updateTicketTypeSchema))
   async updateTicketType(
     @Param('ticketTypeId') ticketTypeId: string,
-    @Body() dto: UpdateTicketTypeDto,
+    @Body(new ZodValidationPipe(updateTicketTypeSchema)) dto: UpdateTicketTypeDto,
   ) {
     return this.concertsService.updateTicketType(ticketTypeId, dto);
   }

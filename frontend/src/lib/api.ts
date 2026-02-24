@@ -24,21 +24,17 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response Interceptor: Unwrap envelope + handle token expiration
+// Response Interceptor: Handle Token Expiration
 apiClient.interceptors.response.use(
-  (response) => {
-    // Backend wraps all responses in { success, data, message, timestamp }
-    // Unwrap the envelope so consumers get the actual data directly
-    if (response.data && response.data.success !== undefined && response.data.data !== undefined) {
-      response.data = response.data.data;
-    }
-    return response;
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
     
-    // If unauthorized and not already retrying
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Skip token refresh for auth endpoints — 401 here means bad credentials, not expired token
+    const isAuthEndpoint = originalRequest?.url?.includes('/auth/');
+    
+    // If unauthorized, not an auth endpoint, and not already retrying
+    if (error.response?.status === 401 && !isAuthEndpoint && !originalRequest._retry) {
       originalRequest._retry = true;
       
       try {
@@ -58,9 +54,7 @@ apiClient.interceptors.response.use(
           refreshToken,
         });
         
-        // Backend envelope: response.data = { success, data: { accessToken, refreshToken }, ... }
-        const tokens = response.data?.data || response.data;
-        const { accessToken } = tokens;
+        const { accessToken } = response.data;
         
         if (typeof window !== 'undefined') {
              localStorage.setItem('access_token', accessToken);

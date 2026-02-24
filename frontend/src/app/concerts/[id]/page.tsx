@@ -6,6 +6,8 @@ import { Icon } from '@/components/ui/Icon';
 import { useAuthStore } from '@/store/auth';
 import { useConcert } from '@/hooks/queries/useConcerts';
 import { useCreateBookingMutation } from '@/hooks/queries/useBookings';
+import { showErrorToast } from '@/lib/toast';
+import { toast } from 'sonner';
 import type { TicketType } from '@/lib/types';
 
 export default function ConcertDetailsPage() {
@@ -38,13 +40,13 @@ export default function ConcertDetailsPage() {
 
   const handleJoinQueue = () => {
     if (!isAuthenticated) {
-      alert('Please log in to book tickets.');
+      toast.warning('Please log in to book tickets.');
       router.push('/login');
       return;
     }
 
     if (totalTickets === 0) {
-      alert('Please select at least one ticket.');
+      toast.warning('Please select at least one ticket.');
       return;
     }
 
@@ -58,8 +60,8 @@ export default function ConcertDetailsPage() {
         onSuccess: (data) => {
           router.push(`/waitroom?jobId=${data.queueJobId}`);
         },
-        onError: (error: unknown) => {
-          alert((error as { message?: string }).message || 'Failed to create booking');
+        onError: (error) => {
+          showErrorToast(error, 'Booking failed');
         },
       }
     );

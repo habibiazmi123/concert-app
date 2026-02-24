@@ -118,10 +118,13 @@ export interface EnqueueBookingResponse {
 }
 
 export interface QueueStatus {
-  queueJobId: string;
-  status: string;
-  position?: number;
-  bookingId?: string;
+  id: string;
+  bookingId?: string | null;
+  userId: string;
+  concertId: string;
+  status: 'WAITING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  position: number | null;
+  errorMsg?: string | null;
   error?: string;
 }
 

@@ -1,39 +1,37 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useRegisterMutation } from '@/hooks/queries/useAuth';
 import { Icon } from '@/components/ui/Icon';
+import { showErrorToast, showSuccessToast } from '@/lib/toast';
+import { registerSchema, type RegisterFormData } from '@/lib/schemas';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { mutate: register, isPending } = useRegisterMutation();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: '',
+  const { mutate: registerUser, isPending } = useRegisterMutation();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    register(formData, {
+  const onSubmit = (data: RegisterFormData) => {
+    registerUser(data, {
       onSuccess: () => {
+        showSuccessToast('Account created!', 'Welcome to LivePass');
         router.push('/');
       },
-      onError: (error: unknown) => {
-        alert((error as { message?: string }).message || 'Failed to register');
+      onError: (error) => {
+        showErrorToast(error, 'Registration failed');
       },
     });
   };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData(prev => ({
-          ...prev,
-          [e.target.name]: e.target.value
-      }))
-  }
 
   return (
     <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background-light dark:bg-background-dark">
@@ -54,7 +52,7 @@ export default function RegisterPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white dark:bg-slate-900 py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-slate-200 dark:border-slate-800">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Full Name
@@ -62,15 +60,13 @@ export default function RegisterPage() {
                 <div className="mt-1">
                   <input
                     id="name"
-                    name="name"
                     type="text"
-                    required
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="appearance-none block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                    {...register('name')}
+                    className={`appearance-none block w-full px-3 py-2 border ${errors.name ? 'border-red-500' : 'border-slate-300 dark:border-slate-700'} rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white`}
                     placeholder="John Doe"
                   />
                 </div>
+                {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
               </div>
 
             <div>
@@ -83,16 +79,14 @@ export default function RegisterPage() {
                 </div>
                 <input
                   id="email"
-                  name="email"
                   type="email"
                   autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="appearance-none block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  {...register('email')}
+                  className={`appearance-none block w-full pl-10 pr-3 py-2 border ${errors.email ? 'border-red-500' : 'border-slate-300 dark:border-slate-700'} rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white`}
                   placeholder="you@example.com"
                 />
               </div>
+              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
             </div>
 
             <div>
@@ -105,16 +99,14 @@ export default function RegisterPage() {
                 </div>
                 <input
                   id="password"
-                  name="password"
                   type="password"
                   autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="appearance-none block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  {...register('password')}
+                  className={`appearance-none block w-full pl-10 pr-3 py-2 border ${errors.password ? 'border-red-500' : 'border-slate-300 dark:border-slate-700'} rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white`}
                   placeholder="••••••••"
                 />
               </div>
+              {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>}
             </div>
 
             <div>
