@@ -4,33 +4,20 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/payment.dto';
-import { firstValueFrom } from 'rxjs';
-import * as crypto from 'crypto';
+import { SnapService } from '../midtrans/snap.service';
+import { MidtransService } from '../midtrans/midtrans.service';
 
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
-  private readonly serverKey: string;
-  private readonly clientKey: string;
-  private readonly isProduction: boolean;
-  private readonly midtransApiUrl: string;
 
   constructor(
     private prisma: PrismaService,
-    private configService: ConfigService,
-    private httpService: HttpService,
-  ) {
-    this.serverKey = configService.get<string>('midtrans.serverKey') || '';
-    this.clientKey = configService.get<string>('midtrans.clientKey') || '';
-    this.isProduction = configService.get<boolean>('midtrans.isProduction') || false;
-    this.midtransApiUrl = this.isProduction
-      ? 'https://app.midtrans.com/snap/v1/transactions'
-      : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
-  }
+    private snapService: SnapService,
+    private midtransService: MidtransService,
+  ) {}
 
   /**
    * Process a payment by generating a Midtrans Snap Token.
@@ -61,52 +48,26 @@ export class PaymentsService {
       );
     }
 
-    // Set up Midtrans request
-    const authString = Buffer.from(this.serverKey + ':').toString('base64');
-    
-    // Convert Decimal to number for Midtrans
-    const grossAmount = Math.round(Number(booking.totalAmount));
-
-    const payload = {
-      transaction_details: {
-        order_id: booking.id,
-        gross_amount: grossAmount,
-      },
-      customer_details: {
-        first_name: booking.user.name,
+    // Call SnapService to generate token
+    const { token, redirectUrl } = await this.snapService.createTransactionToken({
+      orderId: booking.id,
+      grossAmount: Number(booking.totalAmount),
+      customerDetails: {
+        firstName: booking.user.name,
         email: booking.user.email,
         phone: booking.user.phone || undefined,
       },
+    });
+
+    return {
+      snapToken: token,
+      redirectUrl,
+      booking: {
+        id: booking.id,
+        status: booking.status,
+      },
+      message: 'Payment token generated successfully',
     };
-
-    console.log(payload)
-
-    try {
-      const response = await firstValueFrom(
-        this.httpService.post(this.midtransApiUrl, payload, {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Basic ${authString}`,
-          },
-        }),
-      );
-
-      this.logger.log(`Generated Snap token for booking: ${booking.id}`);
-
-      return {
-        snapToken: response.data.token,
-        redirectUrl: response.data.redirect_url,
-        booking: {
-          id: booking.id,
-          status: booking.status,
-        },
-        message: 'Payment token generated successfully',
-      };
-    } catch (error: any) {
-      this.logger.error('Midtrans API error', error.response?.data || error.message);
-      throw new BadRequestException('Failed to generate payment token');
-    }
   }
 
   /**
@@ -124,14 +85,15 @@ export class PaymentsService {
       transaction_id,
     } = body;
 
-    // 1. Verify Signature
-    const hashString = order_id + status_code + gross_amount + this.serverKey;
-    const expectedSignature = crypto
-      .createHash('sha512')
-      .update(hashString)
-      .digest('hex');
+    // 1. Verify Signature using MidtransService
+    const isValidSignature = this.midtransService.verifySignature(
+      order_id,
+      status_code,
+      gross_amount,
+      signature_key,
+    );
 
-    if (signature_key !== expectedSignature) {
+    if (!isValidSignature) {
       this.logger.warn(`Invalid signature for order: ${order_id}`);
       throw new BadRequestException('Invalid signature');
     }
