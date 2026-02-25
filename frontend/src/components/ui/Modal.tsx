@@ -25,16 +25,16 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-2xl' }
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4" onClick={onClose}>
       <div
         ref={panelRef}
-        className={`bg-white dark:bg-surface-dark rounded-xl shadow-xl w-full ${maxWidth} max-h-[90vh] overflow-y-auto`}
+        className={`card-brutal-static w-full ${maxWidth} max-h-[90vh] overflow-y-auto`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white dark:bg-surface-dark border-b border-slate-200 dark:border-border-dark px-6 py-4 flex items-center justify-between z-10">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-            <Icon name="close" className="text-xl" />
+        <div className="sticky top-0 bg-surface border-b-2 border-border-brutal px-6 py-4 flex items-center justify-between z-10 rounded-t-[var(--radius-brutal)]">
+          <h3 className="text-lg font-bold font-heading text-ink">{title}</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg border-2 border-border-brutal bg-surface hover:bg-secondary hover:text-white flex items-center justify-center transition-colors">
+            <Icon name="close" className="text-sm" />
           </button>
         </div>
         <div className="p-6">{children}</div>

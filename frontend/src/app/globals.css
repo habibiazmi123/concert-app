@@ -1,47 +1,198 @@
 @import 'tailwindcss';
 
+/*
+ * Neo-Brutalist Design System
+ * Inspired by saweria.co aesthetic but with a fresh concert palette
+ * ───────────────────────────────────────────────────────────────
+ */
+
 @theme {
-  --color-primary: #135bec;
-  --color-background-light: #f6f6f8;
-  --color-background-dark: #0a0f1e;
-  --color-surface-dark: #161c2d;
-  --color-border-dark: #242b3d;
-  --font-display: var(--font-spline-sans);
+  /* ─── Core Palette ────────────────────────────── */
+  --color-primary: #7C3AED;          /* electric violet */
+  --color-primary-hover: #6D28D9;
+  --color-secondary: #FF6B6B;        /* hot coral */
+  --color-accent: #00D9A5;           /* bright mint */
+  --color-accent-yellow: #FFD166;    /* sunshine yellow */
+  --color-accent-pink: #FF8FAB;      /* bubblegum pink */
+
+  /* ─── Surfaces ────────────────────────────────── */
+  --color-background: #FFF8F3;       /* warm cream */
+  --color-surface: #FFFFFF;          /* pure white cards */
+  --color-surface-alt: #FFF0E5;      /* peach tint for highlights */
+
+  /* ─── Text ────────────────────────────────────── */
+  --color-ink: #1A1A2E;              /* deep navy */
+  --color-ink-muted: #6B7280;        /* grey */
+  --color-ink-light: #9CA3AF;        /* light grey */
+
+  /* ─── Brutalist Tokens ────────────────────────── */
+  --color-border-brutal: #1A1A2E;    /* thick borders */
+  --shadow-brutal: 4px 4px 0px #1A1A2E;
+  --shadow-brutal-sm: 2px 2px 0px #1A1A2E;
+  --shadow-brutal-hover: 2px 2px 0px #1A1A2E;
+  --shadow-brutal-pressed: 1px 1px 0px #1A1A2E;
+  --radius-brutal: 12px;
+
+  /* ─── Fonts ───────────────────────────────────── */
+  --font-heading: var(--font-comfortaa);
+  --font-body: var(--font-ibm-plex-mono);
+  --font-sans: var(--font-ibm-plex-mono);
 }
 
-@layer base {
-  :root {
-    --background: var(--color-background-light);
-    --foreground: #0f172a; /* slate-900 */
-  }
-}
+/* ─── Base ──────────────────────────────────────── */
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: var(--color-background);
+  color: var(--color-ink);
+  font-family: var(--font-body), monospace;
 }
 
-/* Custom Scrollbar for a premium feel */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), sans-serif;
+}
+
+::selection {
+  background-color: #7C3AED30;
+}
+
+/* ─── Scrollbar ─────────────────────────────────── */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--color-background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: var(--color-ink);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--color-primary);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-spline-sans);
+/* ─── Brutalist Component Classes ───────────────── */
+
+.card-brutal {
+  background: var(--color-surface);
+  border: 2px solid var(--color-border-brutal);
+  border-radius: var(--radius-brutal);
+  box-shadow: var(--shadow-brutal);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.card-brutal:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 6px 6px 0px var(--color-border-brutal);
+}
+
+.card-brutal-static {
+  background: var(--color-surface);
+  border: 2px solid var(--color-border-brutal);
+  border-radius: var(--radius-brutal);
+  box-shadow: var(--shadow-brutal);
+}
+
+.btn-brutal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-family: var(--font-body), monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 2px solid var(--color-border-brutal);
+  border-radius: var(--radius-brutal);
+  box-shadow: var(--shadow-brutal-sm);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.btn-brutal:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-brutal);
+}
+
+.btn-brutal:active {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-brutal-pressed);
+}
+
+.btn-brutal:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: var(--shadow-brutal-sm);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--color-secondary);
+  color: white;
+}
+
+.btn-accent {
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-ink);
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.btn-ghost:hover {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border-brutal);
+  box-shadow: var(--shadow-brutal-sm);
+}
+
+.input-brutal {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  font-family: var(--font-body), monospace;
+  font-size: 0.875rem;
+  border: 2px solid var(--color-border-brutal);
+  border-radius: var(--radius-brutal);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.input-brutal:focus {
+  outline: none;
+  box-shadow: var(--shadow-brutal-sm);
+  border-color: var(--color-primary);
+}
+
+.input-brutal::placeholder {
+  color: var(--color-ink-light);
+}
+
+.input-brutal-error {
+  border-color: var(--color-secondary);
+}
+
+.badge-brutal {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--font-body), monospace;
+  border: 1.5px solid var(--color-border-brutal);
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }

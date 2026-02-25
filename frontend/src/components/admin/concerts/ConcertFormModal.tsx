@@ -75,8 +75,6 @@ export function ConcertFormModal({ concert, onClose }: ConcertFormModalProps) {
 
   const { fields, append, remove } = useFieldArray({ control, name: 'ticketTypes' });
 
-  // ─── Image Upload ───────────────────────────────
-
   const handleImageUpload = async (concertId: string, file: File) => {
     setUploading(true);
     try {
@@ -103,8 +101,6 @@ export function ConcertFormModal({ concert, onClose }: ConcertFormModalProps) {
     reader.readAsDataURL(file);
     if (concert) await handleImageUpload(concert.id, file);
   };
-
-  // ─── Submit ─────────────────────────────────────
 
   const onSubmit = async (data: ConcertCreateFormData) => {
     const payload = {
@@ -149,21 +145,21 @@ export function ConcertFormModal({ concert, onClose }: ConcertFormModalProps) {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Image Upload */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Event Image</label>
+          <label className="block text-sm font-semibold text-ink mb-2">Event Image</label>
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="relative border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl overflow-hidden cursor-pointer hover:border-primary transition-colors h-48 flex items-center justify-center"
+            className="relative border-2 border-dashed border-border-brutal rounded-xl overflow-hidden cursor-pointer hover:border-primary transition-colors h-48 flex items-center justify-center bg-surface-alt"
           >
             {imagePreview ? (
               <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
             ) : (
-              <div className="text-center text-slate-400">
+              <div className="text-center text-ink-muted">
                 <Icon name="cloud_upload" className="text-4xl mb-1" />
-                <p className="text-sm">Click to upload image</p>
+                <p className="text-sm font-medium">Click to upload image</p>
               </div>
             )}
             {uploading && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <div className="absolute inset-0 bg-ink/50 flex items-center justify-center">
                 <Icon name="sync" className="text-3xl text-white animate-spin" />
               </div>
             )}
@@ -219,21 +215,21 @@ export function ConcertFormModal({ concert, onClose }: ConcertFormModalProps) {
         {!isEdit && (
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Ticket Types</label>
+              <label className="text-sm font-semibold text-ink">Ticket Types</label>
               <button
                 type="button"
                 onClick={() => append({ name: '', price: 0, totalSeats: 0 })}
-                className="inline-flex items-center gap-1 text-xs text-primary hover:text-[var(--color-primary-hover)] font-medium"
+                className="btn-brutal btn-accent text-xs py-1 px-3"
               >
                 <Icon name="add" className="text-sm" /> Add Type
               </button>
             </div>
             {errors.ticketTypes?.root && (
-              <p className="text-xs text-red-500 mt-1">{errors.ticketTypes.root.message}</p>
+              <p className="text-xs text-secondary font-medium mt-1">{errors.ticketTypes.root.message}</p>
             )}
             <div className="space-y-3">
               {fields.map((field, i) => (
-                <div key={field.id} className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                <div key={field.id} className="flex items-start gap-3 p-3 bg-surface-alt border-2 border-border-brutal/30 rounded-xl">
                   <div className="flex-1 grid grid-cols-3 gap-2">
                     <FormField label="" error={errors.ticketTypes?.[i]?.name?.message}>
                       <input {...register(`ticketTypes.${i}.name`)} placeholder="Name" className={inputStyles(!!errors.ticketTypes?.[i]?.name)} />
@@ -246,8 +242,8 @@ export function ConcertFormModal({ concert, onClose }: ConcertFormModalProps) {
                     </FormField>
                   </div>
                   {fields.length > 1 && (
-                    <button type="button" onClick={() => remove(i)} className="text-red-400 hover:text-red-600 mt-1">
-                      <Icon name="delete" className="text-lg" />
+                    <button type="button" onClick={() => remove(i)} className="w-8 h-8 rounded-lg border-2 border-border-brutal bg-surface hover:bg-secondary hover:text-white flex items-center justify-center transition-colors mt-1">
+                      <Icon name="delete" className="text-sm" />
                     </button>
                   )}
                 </div>
@@ -257,11 +253,11 @@ export function ConcertFormModal({ concert, onClose }: ConcertFormModalProps) {
         )}
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-2 border-t border-slate-200 dark:border-border-dark">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+        <div className="flex justify-end gap-3 pt-4 border-t-2 border-border-brutal">
+          <button type="button" onClick={onClose} className="btn-brutal btn-ghost text-sm py-2">
             Cancel
           </button>
-          <button type="submit" disabled={isPending} className="px-5 py-2 bg-primary hover:bg-[var(--color-primary-hover)] text-white text-sm font-medium rounded-lg shadow-sm transition-colors disabled:opacity-50">
+          <button type="submit" disabled={isPending} className="btn-brutal btn-primary text-sm py-2">
             {isPending ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Concert'}
           </button>
         </div>

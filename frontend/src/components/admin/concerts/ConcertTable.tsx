@@ -24,18 +24,18 @@ export function ConcertTable({ concerts, loading, onEdit, onDelete }: ConcertTab
           header: 'Concert',
           render: (c) => (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden shrink-0">
+              <div className="w-10 h-10 rounded-xl border-2 border-border-brutal bg-surface-alt overflow-hidden shrink-0">
                 {c.imageUrl ? (
                   <img src={c.imageUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Icon name="music_note" className="text-slate-400" />
+                    <Icon name="music_note" className="text-ink-muted" />
                   </div>
                 )}
               </div>
               <div>
-                <p className="font-medium text-slate-900 dark:text-white">{c.title}</p>
-                <p className="text-xs text-slate-500">{c.artist}</p>
+                <p className="font-bold text-ink">{c.title}</p>
+                <p className="text-xs text-ink-muted">{c.artist}</p>
               </div>
             </div>
           ),
@@ -44,7 +44,7 @@ export function ConcertTable({ concerts, loading, onEdit, onDelete }: ConcertTab
           key: 'date',
           header: 'Date',
           render: (c) => (
-            <span className="text-slate-600 dark:text-slate-300">
+            <span className="text-ink-muted font-medium">
               {new Date(c.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           ),
@@ -54,8 +54,8 @@ export function ConcertTable({ concerts, loading, onEdit, onDelete }: ConcertTab
           header: 'Venue',
           render: (c) => (
             <div>
-              <p className="text-slate-600 dark:text-slate-300">{c.venue}</p>
-              <p className="text-xs text-slate-400">{c.city}</p>
+              <p className="text-ink font-medium">{c.venue}</p>
+              <p className="text-xs text-ink-light">{c.city}</p>
             </div>
           ),
         },
@@ -67,8 +67,8 @@ export function ConcertTable({ concerts, loading, onEdit, onDelete }: ConcertTab
             const sold = c.ticketTypes.reduce((s, tt) => s + (tt.totalSeats - tt.availableSeats), 0);
             return (
               <>
-                <span className="font-medium text-slate-900 dark:text-white">{sold}</span>
-                <span className="text-slate-400">/{total}</span>
+                <span className="font-bold text-ink">{sold}</span>
+                <span className="text-ink-light">/{total}</span>
               </>
             );
           },
@@ -86,17 +86,17 @@ export function ConcertTable({ concerts, loading, onEdit, onDelete }: ConcertTab
             <div className="flex items-center justify-end gap-1">
               <button
                 onClick={() => onEdit(c)}
-                className="p-1.5 text-slate-400 hover:text-primary rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                className="w-8 h-8 rounded-lg border-2 border-border-brutal bg-surface hover:bg-accent-yellow flex items-center justify-center transition-colors"
                 title="Edit"
               >
-                <Icon name="edit" className="text-lg" />
+                <Icon name="edit" className="text-sm" />
               </button>
               <button
                 onClick={() => onDelete(c)}
-                className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                className="w-8 h-8 rounded-lg border-2 border-border-brutal bg-surface hover:bg-secondary hover:text-white flex items-center justify-center transition-colors"
                 title="Delete"
               >
-                <Icon name="delete" className="text-lg" />
+                <Icon name="delete" className="text-sm" />
               </button>
             </div>
           ),

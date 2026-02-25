@@ -13,22 +13,22 @@ export function Pagination({ page, totalPages, total, limit, onPageChange }: Pag
   const end = Math.min(page * limit, total);
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-border-dark">
-      <p className="text-xs text-slate-500">
+    <div className="flex items-center justify-between px-4 py-3 border-t-2 border-border-brutal">
+      <p className="text-xs text-ink-muted font-medium">
         Showing {start}–{end} of {total}
       </p>
-      <div className="flex gap-1">
+      <div className="flex gap-2">
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          className="px-3 py-1 text-sm rounded border border-slate-300 dark:border-slate-600 disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300"
+          className="btn-brutal btn-ghost text-xs py-1 px-3"
         >
           Prev
         </button>
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="px-3 py-1 text-sm rounded border border-slate-300 dark:border-slate-600 disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300"
+          className="btn-brutal btn-ghost text-xs py-1 px-3"
         >
           Next
         </button>

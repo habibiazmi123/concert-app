@@ -8,17 +8,17 @@ interface StatCardProps {
   color?: string;
 }
 
-export function StatCard({ icon, label, value, sub, color = 'text-primary' }: StatCardProps) {
+export function StatCard({ icon, label, value, sub, color = 'bg-primary' }: StatCardProps) {
   return (
-    <div className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-border-dark p-4">
+    <div className="card-brutal-static p-5">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-          <Icon name={icon} className={`text-xl ${color}`} />
+        <div className={`w-11 h-11 rounded-xl ${color} border-2 border-border-brutal flex items-center justify-center`}>
+          <Icon name={icon} className="text-xl text-white" />
         </div>
         <div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
-          {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+          <p className="text-2xl font-bold font-heading text-ink">{value}</p>
+          <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide">{label}</p>
+          {sub && <p className="text-xs text-ink-light mt-0.5">{sub}</p>}
         </div>
       </div>
     </div>

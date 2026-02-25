@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Spline_Sans } from 'next/font/google';
+import { Comfortaa, IBM_Plex_Mono } from 'next/font/google';
 
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -9,8 +9,14 @@ import { Toaster } from 'sonner';
 
 import './globals.css';
 
-const splineSans = Spline_Sans({
-  variable: '--font-spline-sans',
+const comfortaa = Comfortaa({
+  variable: '--font-comfortaa',
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: '--font-ibm-plex-mono',
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
 });
@@ -26,18 +32,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
           <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
-      <body className={`${splineSans.variable} font-display antialiased text-slate-900 dark:text-slate-100 bg-background-light dark:bg-background-dark min-h-screen flex flex-col selection:bg-[#135bec]/30`} >
+      <body className={`${comfortaa.variable} ${ibmPlexMono.variable} font-sans antialiased min-h-screen flex flex-col`}>
         <QueryProvider>
           <AuthInitializer>
             <Navbar />
             <main className="flex-1 flex flex-col">{children}</main>
             <Footer />
           </AuthInitializer>
-          <Toaster theme="dark" position="top-right" richColors closeButton />
+          <Toaster position="top-right" richColors closeButton />
         </QueryProvider>
       </body>
     </html>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Icon } from '@/components/ui/Icon';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { useAdminQueueStatus } from '@/hooks/queries/useAdmin';
 
 interface QueueEvent {
@@ -24,22 +25,22 @@ interface QueueCounts {
 }
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: string }> = {
-  WAITING: { color: 'text-amber-500', bg: 'bg-amber-500/10', icon: 'hourglass_top' },
-  PROCESSING: { color: 'text-blue-500', bg: 'bg-blue-500/10', icon: 'sync' },
-  COMPLETED: { color: 'text-emerald-500', bg: 'bg-emerald-500/10', icon: 'check_circle' },
-  FAILED: { color: 'text-red-500', bg: 'bg-red-500/10', icon: 'error' },
+  WAITING: { color: 'text-accent-yellow', bg: 'bg-accent-yellow/10', icon: 'hourglass_top' },
+  PROCESSING: { color: 'text-primary', bg: 'bg-primary/10', icon: 'sync' },
+  COMPLETED: { color: 'text-accent', bg: 'bg-accent/10', icon: 'check_circle' },
+  FAILED: { color: 'text-secondary', bg: 'bg-secondary/10', icon: 'error' },
 };
 
 function CountCard({ label, count, icon, color, bg }: {
   label: string; count: number; icon: string; color: string; bg: string;
 }) {
   return (
-    <div className={`rounded-xl border border-slate-200 dark:border-border-dark p-4 ${bg}`}>
+    <div className={`card-brutal-static p-4 ${bg}`}>
       <div className="flex items-center gap-3">
         <Icon name={icon} className={`text-2xl ${color}`} />
         <div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">{count}</p>
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+          <p className="text-2xl font-bold font-heading text-ink">{count}</p>
+          <p className="text-xs font-bold text-ink-muted uppercase tracking-wide">{label}</p>
         </div>
       </div>
     </div>
@@ -49,39 +50,39 @@ function CountCard({ label, count, icon, color, bg }: {
 function LiveFeed({ events }: { events: QueueEvent[] }) {
   if (events.length === 0) {
     return (
-      <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+      <div className="p-8 text-center text-ink-muted">
         <Icon name="wifi" className="text-4xl mb-2 opacity-50" />
-        <p>Waiting for queue events...</p>
+        <p className="font-medium">Waiting for queue events...</p>
         <p className="text-xs mt-1">Events will appear here in real-time when bookings are processed.</p>
       </div>
     );
   }
 
   return (
-    <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[500px] overflow-y-auto">
+    <div className="divide-y divide-border-brutal/20 max-h-[500px] overflow-y-auto">
       {events.map((event, i) => {
         const config = STATUS_CONFIG[event.status] || STATUS_CONFIG.WAITING;
         return (
           <div
             key={`${event.jobId}-${event.status}-${i}`}
-            className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+            className="flex items-center gap-3 px-4 py-3 hover:bg-surface-alt/50 transition-colors"
           >
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${config.bg}`}>
+            <div className={`w-8 h-8 rounded-lg border-2 border-border-brutal/30 flex items-center justify-center ${config.bg}`}>
               <Icon name={config.icon} className={`text-lg ${config.color} ${event.status === 'PROCESSING' ? 'animate-spin' : ''}`} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                Job <span className="font-mono text-xs text-slate-500">{event.jobId?.slice(0, 8)}...</span>
+              <p className="text-sm font-bold text-ink truncate">
+                Job <span className="font-mono text-xs text-ink-muted">{event.jobId?.slice(0, 8)}...</span>
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-ink-muted">
                 {event.bookingId ? `Booking: ${event.bookingId.slice(0, 8)}...` : ''}
                 {event.error ? `Error: ${event.error}` : ''}
               </p>
             </div>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.color}`}>
+            <span className={`badge-brutal text-xs ${config.bg} ${config.color}`}>
               {event.status}
             </span>
-            <span className="text-xs text-slate-400 shrink-0">
+            <span className="text-xs text-ink-light shrink-0">
               {event.timestamp || 'now'}
             </span>
           </div>
@@ -101,7 +102,7 @@ export default function AdminQueuePage() {
   const addEvent = useCallback((event: QueueEvent) => {
     setEvents((prev) => [
       { ...event, timestamp: new Date().toLocaleTimeString() },
-      ...prev.slice(0, 99), // Keep last 100 events
+      ...prev.slice(0, 99),
     ]);
   }, []);
 
@@ -116,21 +117,10 @@ export default function AdminQueuePage() {
 
     socketRef.current = socket;
 
-    socket.on('connect', () => {
-      setConnected(true);
-    });
-
-    socket.on('disconnect', () => {
-      setConnected(false);
-    });
-
-    socket.on('queue:update', (data: QueueEvent) => {
-      addEvent(data);
-    });
-
-    socket.on('queue:counts', (data: QueueCounts) => {
-      setLiveCounts(data);
-    });
+    socket.on('connect', () => setConnected(true));
+    socket.on('disconnect', () => setConnected(false));
+    socket.on('queue:update', (data: QueueEvent) => addEvent(data));
+    socket.on('queue:counts', (data: QueueCounts) => setLiveCounts(data));
 
     return () => {
       socket.disconnect();
@@ -145,47 +135,43 @@ export default function AdminQueuePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Queue Monitor</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Live overview of BullMQ booking queue.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${connected ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
-            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
-            {connected ? 'Live' : 'Disconnected'}
-          </span>
-          {redis && !redis.error && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-violet-500/10 text-violet-500">
-              <Icon name="memory" className="text-sm" />
-              Redis: {redis.usedMemory} · {redis.connectedClients} clients
+      <PageHeader
+        title="Queue Monitor"
+        subtitle="Live overview of BullMQ booking queue."
+        action={
+          <div className="flex items-center gap-2">
+            <span className={`badge-brutal text-xs ${connected ? 'bg-accent/20 text-accent' : 'bg-secondary/20 text-secondary'}`}>
+              <span className={`inline-block w-2 h-2 rounded-full mr-1 ${connected ? 'bg-accent animate-pulse' : 'bg-secondary'}`} />
+              {connected ? 'Live' : 'Disconnected'}
             </span>
-          )}
-        </div>
-      </div>
+            {redis && !redis.error && (
+              <span className="badge-brutal text-xs bg-primary/10 text-primary">
+                <Icon name="memory" className="text-sm mr-1" />
+                Redis: {redis.usedMemory} · {redis.connectedClients} clients
+              </span>
+            )}
+          </div>
+        }
+      />
 
       {/* Queue Counts */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <CountCard label="Waiting" count={counts.waiting} icon="hourglass_top" color="text-amber-500" bg="bg-white dark:bg-surface-dark" />
-        <CountCard label="Processing" count={counts.processing} icon="sync" color="text-blue-500" bg="bg-white dark:bg-surface-dark" />
-        <CountCard label="Completed" count={counts.completed} icon="check_circle" color="text-emerald-500" bg="bg-white dark:bg-surface-dark" />
-        <CountCard label="Failed" count={counts.failed} icon="error" color="text-red-500" bg="bg-white dark:bg-surface-dark" />
-        <CountCard label="Total Jobs" count={total} icon="list_alt" color="text-primary" bg="bg-white dark:bg-surface-dark" />
+        <CountCard label="Waiting" count={counts.waiting} icon="hourglass_top" color="text-accent-yellow" bg="bg-accent-yellow/5" />
+        <CountCard label="Processing" count={counts.processing} icon="sync" color="text-primary" bg="bg-primary/5" />
+        <CountCard label="Completed" count={counts.completed} icon="check_circle" color="text-accent" bg="bg-accent/5" />
+        <CountCard label="Failed" count={counts.failed} icon="error" color="text-secondary" bg="bg-secondary/5" />
+        <CountCard label="Total Jobs" count={total} icon="list_alt" color="text-ink" bg="bg-surface-alt" />
       </div>
 
       {/* Live Feed */}
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 dark:border-border-dark flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+      <div className="card-brutal-static overflow-hidden">
+        <div className="px-5 py-4 border-b-2 border-border-brutal flex items-center justify-between">
+          <h3 className="text-lg font-bold font-heading text-ink flex items-center gap-2">
             <Icon name="stream" className="text-primary" />
             Live Feed
           </h3>
           {events.length > 0 && (
-            <button
-              onClick={() => setEvents([])}
-              className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
-            >
+            <button onClick={() => setEvents([])} className="btn-brutal btn-ghost text-xs py-1 px-3">
               Clear
             </button>
           )}
@@ -194,47 +180,47 @@ export default function AdminQueuePage() {
       </div>
 
       {/* Recent Jobs Table */}
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 dark:border-border-dark">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-            <Icon name="history" className="text-slate-400" />
+      <div className="card-brutal-static overflow-hidden">
+        <div className="px-5 py-4 border-b-2 border-border-brutal">
+          <h3 className="text-lg font-bold font-heading text-ink flex items-center gap-2">
+            <Icon name="history" className="text-ink-muted" />
             Recent Queue Jobs
           </h3>
         </div>
         {isLoading ? (
-          <div className="p-8 text-center text-slate-500">Loading...</div>
+          <div className="p-8 text-center text-ink-muted font-medium">Loading...</div>
         ) : recentJobs.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 dark:text-slate-400">No queue jobs yet.</div>
+          <div className="p-8 text-center text-ink-muted font-medium">No queue jobs yet.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                  <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400">Status</th>
-                  <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400">User</th>
-                  <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400">Concert</th>
-                  <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400">Created</th>
+                <tr className="border-b-2 border-border-brutal bg-surface-alt">
+                  <th className="text-left py-3 px-4 font-bold text-ink uppercase text-xs tracking-wider">Status</th>
+                  <th className="text-left py-3 px-4 font-bold text-ink uppercase text-xs tracking-wider">User</th>
+                  <th className="text-left py-3 px-4 font-bold text-ink uppercase text-xs tracking-wider">Concert</th>
+                  <th className="text-left py-3 px-4 font-bold text-ink uppercase text-xs tracking-wider">Created</th>
                 </tr>
               </thead>
               <tbody>
                 {recentJobs.map((job) => {
                   const config = STATUS_CONFIG[job.status] || STATUS_CONFIG.WAITING;
                   return (
-                    <tr key={job.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <tr key={job.id} className="border-b border-border-brutal/30 hover:bg-surface-alt/50 transition-colors">
                       <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.color}`}>
-                          <Icon name={config.icon} className="text-sm" />
+                        <span className={`badge-brutal text-xs ${config.bg} ${config.color}`}>
+                          <Icon name={config.icon} className="text-sm mr-1" />
                           {job.status}
                         </span>
                       </td>
                       <td className="py-3 px-4">
                         <div>
-                          <p className="font-medium text-slate-900 dark:text-white">{job.user.name}</p>
-                          <p className="text-xs text-slate-500">{job.user.email}</p>
+                          <p className="font-bold text-ink">{job.user.name}</p>
+                          <p className="text-xs text-ink-muted">{job.user.email}</p>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{job.concert.title}</td>
-                      <td className="py-3 px-4 text-slate-500 text-xs">
+                      <td className="py-3 px-4 text-ink-muted font-medium">{job.concert.title}</td>
+                      <td className="py-3 px-4 text-ink-light text-xs">
                         {new Date(job.createdAt).toLocaleString()}
                       </td>
                     </tr>

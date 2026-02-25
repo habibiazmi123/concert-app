@@ -52,7 +52,7 @@ export default function AdminConcertsPage() {
         action={
           <button
             onClick={() => { setEditConcert(null); setShowForm(true); }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-[var(--color-primary-hover)] text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
+            className="btn-brutal btn-primary text-sm"
           >
             <Icon name="add" className="text-lg" />
             Create Event
@@ -63,18 +63,17 @@ export default function AdminConcertsPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
+          <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-light text-lg" />
           <input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search concerts..."
-            className="w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="input-brutal !pl-10"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value as ConcertStatus | ''); setPage(1); }}
-          className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary"
         >
           <option value="">All Statuses</option>
           <option value="DRAFT">Draft</option>
@@ -85,7 +84,7 @@ export default function AdminConcertsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-xl shadow-sm overflow-hidden">
+      <div className="card-brutal-static overflow-hidden">
         <ConcertTable
           concerts={concerts}
           loading={isLoading}

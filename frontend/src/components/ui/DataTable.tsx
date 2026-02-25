@@ -25,14 +25,14 @@ export function DataTable<T>({
   emptyMessage = 'No data found.',
 }: DataTableProps<T>) {
   if (loading) {
-    return <div className="p-8 text-center text-slate-500">Loading...</div>;
+    return <div className="p-8 text-center text-ink-muted font-medium">Loading...</div>;
   }
 
   if (data.length === 0) {
     return (
-      <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+      <div className="p-8 text-center text-ink-muted">
         <Icon name={emptyIcon} className="text-4xl mb-2 opacity-50" />
-        <p>{emptyMessage}</p>
+        <p className="font-medium">{emptyMessage}</p>
       </div>
     );
   }
@@ -41,11 +41,11 @@ export function DataTable<T>({
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+          <tr className="border-b-2 border-border-brutal bg-surface-alt">
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={`text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400 ${col.className || ''}`}
+                className={`text-left py-3 px-4 font-bold text-ink uppercase text-xs tracking-wider ${col.className || ''}`}
               >
                 {col.header}
               </th>
@@ -56,7 +56,7 @@ export function DataTable<T>({
           {data.map((item) => (
             <tr
               key={keyExtractor(item)}
-              className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              className="border-b border-border-brutal/30 hover:bg-surface-alt/50 transition-colors"
             >
               {columns.map((col) => (
                 <td key={col.key} className={`py-3 px-4 ${col.className || ''}`}>
