@@ -1,13 +1,12 @@
 model BookingItem {
-  id           String  @id @default(uuid())
+  id           String     @id @default(uuid())
   bookingId    String
   ticketTypeId String
   quantity     Int
-  unitPrice    Decimal @db.Decimal(12, 2)
-  subtotal     Decimal @db.Decimal(12, 2)
-
-  booking    Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+  unitPrice    Decimal    @db.Decimal(12, 2)
+  subtotal     Decimal    @db.Decimal(12, 2)
+  booking      Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
 
   @@index([bookingId])
   @@map("booking_items")

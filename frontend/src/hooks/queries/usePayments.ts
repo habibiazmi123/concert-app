@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetcher, poster } from '@/lib/fetcher';
-import type { Payment, CreatePaymentRequest, SnapPaymentResponse } from '@/lib/types';
+import type { Payment, CreatePaymentRequest, CorePaymentResponse } from '@/lib/types';
 import { bookingKeys } from './useBookings';
 
 export const paymentKeys = {
@@ -13,7 +13,7 @@ export const useProcessPaymentMutation = () => {
 
   return useMutation({
     mutationFn: (data: CreatePaymentRequest) => {
-      return poster<SnapPaymentResponse>('/payments', data);
+      return poster<CorePaymentResponse>('/payments', data);
     },
     onSuccess: () => {
       // Invalidate bookings to refresh status

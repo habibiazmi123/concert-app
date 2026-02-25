@@ -4,11 +4,16 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import * as crypto from 'crypto';
 
+export interface BankTransferDetails {
+  bank: 'bca' | 'bni' | 'bri' | 'mandiri' | 'permata' | 'cimb' | string;
+}
+
 export interface ChargeCoreApiParams {
   orderId: string;
   grossAmount: number;
   paymentType: string;
   tokenId?: string; // required for credit_card
+  bankTransfer?: BankTransferDetails; // required for bank_transfer
   customerDetails: {
     firstName: string;
     email: string;
@@ -60,6 +65,27 @@ export class MidtransService {
         token_id: params.tokenId,
         authentication: true, // Enable 3D Secure
       };
+    }
+
+    // Bank transfer specific fields (Virtual Account)
+    if (params.paymentType === 'bank_transfer' && params.bankTransfer) {
+      const bank = params.bankTransfer.bank.toLowerCase();
+      if (bank === 'mandiri') {
+        // Mandiri requires the 'echannel' payment type and specific bill info
+        payload.payment_type = 'echannel';
+        payload.echannel = {
+          bill_info1: 'Payment For:',
+          bill_info2: `Order ${params.orderId}`,
+        };
+      } else if (bank === 'permata') {
+        // Permata can be handled natively as permata payment_type or under bank_transfer in newer APIs
+        payload.payment_type = 'permata';
+      } else {
+        // Standard handling for BCA, BNI, BRI, CIMB
+        payload.bank_transfer = {
+          bank,
+        };
+      }
     }
 
     try {

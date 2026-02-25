@@ -160,6 +160,15 @@ export class CreateBookingBody {
 export class CreatePaymentBody {
   @ApiProperty({ example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', format: 'uuid' })
   bookingId: string;
+
+  @ApiPropertyOptional({ enum: ['credit_card', 'bank_transfer', 'gopay', 'shopeepay', 'dana', 'ovo'], default: 'credit_card' })
+  paymentType?: string;
+
+  @ApiPropertyOptional({ example: '-573162807', description: 'Card token_id (required if credit_card)' })
+  tokenId?: string;
+
+  @ApiPropertyOptional({ example: 'bca', description: 'Bank code (required if bank_transfer)' })
+  bank?: string;
 }
 
 // ─── Users ───────────────────────────────────────────

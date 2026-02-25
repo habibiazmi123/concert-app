@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/payment.dto';
-import { SnapService } from '../midtrans/snap.service';
 import { MidtransService } from '../midtrans/midtrans.service';
 
 @Injectable()
@@ -15,12 +14,11 @@ export class PaymentsService {
 
   constructor(
     private prisma: PrismaService,
-    private snapService: SnapService,
     private midtransService: MidtransService,
   ) {}
 
   /**
-   * Process a payment by generating a Midtrans Snap Token.
+   * Process a payment via Midtrans Core API (credit card token or bank transfer).
    */
   async processPayment(userId: string, dto: CreatePaymentDto) {
     const booking = await this.prisma.booking.findFirst({
@@ -41,17 +39,19 @@ export class PaymentsService {
       );
     }
 
-    // Checking expiry if needed
     if (new Date() > booking.expiresAt) {
       throw new BadRequestException(
         'Booking has expired. Please create a new booking.',
       );
     }
 
-    // Call SnapService to generate token
-    const { token, redirectUrl } = await this.snapService.createTransactionToken({
+    // Call MidtransService to charge via Core API
+    const chargeResponse = await this.midtransService.charge({
       orderId: booking.id,
       grossAmount: Number(booking.totalAmount),
+      paymentType: dto.paymentType,
+      tokenId: dto.tokenId,
+      bankTransfer: dto.bank ? { bank: dto.bank } : undefined,
       customerDetails: {
         firstName: booking.user.name,
         email: booking.user.email,
@@ -59,14 +59,72 @@ export class PaymentsService {
       },
     });
 
-    return {
-      snapToken: token,
-      redirectUrl,
-      booking: {
-        id: booking.id,
-        status: booking.status,
+    const txStatus: string = chargeResponse.transaction_status;
+    const fraudStatus: string = chargeResponse.fraud_status;
+
+    // Map Midtrans status → our PaymentStatus
+    let paymentStatus: 'PENDING' | 'COMPLETED' | 'FAILED' = 'PENDING';
+    let bookingStatus: 'PENDING' | 'CONFIRMED' | 'CANCELLED' = 'PENDING';
+
+    if (txStatus === 'capture' || txStatus === 'settlement') {
+      if (txStatus === 'capture' && fraudStatus === 'challenge') {
+        paymentStatus = 'PENDING';
+      } else {
+        paymentStatus = 'COMPLETED';
+        bookingStatus = 'CONFIRMED';
+      }
+    } else if (txStatus === 'deny' || txStatus === 'cancel' || txStatus === 'expire') {
+      paymentStatus = 'FAILED';
+      bookingStatus = 'CANCELLED';
+    }
+
+    // Map payment method
+    let method: any = 'E_WALLET';
+    if (dto.paymentType === 'credit_card') method = 'CREDIT_CARD';
+    else if (dto.paymentType === 'bank_transfer') method = 'BANK_TRANSFER';
+
+    // Upsert Payment record
+    const payment = await this.prisma.payment.upsert({
+      where: { bookingId: booking.id },
+      update: {
+        status: paymentStatus,
+        transactionId: chargeResponse.transaction_id,
+        method,
+        providerMetadata: chargeResponse, // Save VA numbers & raw payload natively
+        ...(paymentStatus === 'COMPLETED' ? { paidAt: new Date() } : {}),
       },
-      message: 'Payment token generated successfully',
+      create: {
+        bookingId: booking.id,
+        amount: booking.totalAmount,
+        method,
+        status: paymentStatus,
+        transactionId: chargeResponse.transaction_id,
+        providerMetadata: chargeResponse, // Save VA numbers & raw payload natively
+        ...(paymentStatus === 'COMPLETED' ? { paidAt: new Date() } : {}),
+      },
+    });
+
+    // Update booking status only if resolved
+    if (bookingStatus !== 'PENDING') {
+      await this.prisma.booking.update({
+        where: { id: booking.id },
+        data: { status: bookingStatus },
+      });
+    }
+
+    return {
+      status: txStatus,
+      payment,
+      booking: { id: booking.id, status: bookingStatus },
+      // 3DS redirect url or other payload returns
+      redirectUrl: chargeResponse.redirect_url || null,
+      chargeResponse, // Including full response allows frontend to read VA numbers, etc.
+      message:
+        txStatus === 'pending'
+          ? 'Payment pending (Complete your transfer or 3D Secure)'
+          : paymentStatus === 'COMPLETED'
+            ? 'Payment successful'
+            : 'Payment failed',
     };
   }
 

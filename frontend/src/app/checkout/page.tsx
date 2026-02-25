@@ -2,17 +2,24 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Script from 'next/script';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { paymentSchema, type PaymentFormData } from '@/lib/schemas';
 import { Icon } from '@/components/ui/Icon';
 import { useBooking } from '@/hooks/queries/useBookings';
 import { useProcessPaymentMutation } from '@/hooks/queries/usePayments';
 import { showErrorToast, showSuccessToast } from '@/lib/toast';
 
-declare global {
-  interface Window {
-    snap: any;
-  }
-}
+const BANKS = [
+  { id: 'bca', name: 'BCA', logo: 'BCA' },
+  { id: 'bni', name: 'BNI', logo: 'BNI' },
+  { id: 'bri', name: 'BRI', logo: 'BRI' },
+  { id: 'mandiri', name: 'Mandiri', logo: 'Mandiri' },
+  { id: 'permata', name: 'Permata', logo: 'Permata' },
+  { id: 'cimb', name: 'CIMB Niaga', logo: 'CIMB' },
+];
+
+// Render component removed
 
 function CheckoutContent() {
   const router = useRouter();
@@ -21,7 +28,45 @@ function CheckoutContent() {
   const { data: booking, isLoading: bookingLoading } = useBooking(bookingId);
   const processPayment = useProcessPaymentMutation();
 
+  const [isTokenizing, setIsTokenizing] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<PaymentFormData>({
+    resolver: zodResolver(paymentSchema),
+    defaultValues: {
+      paymentMethod: 'credit_card',
+      bankCode: 'bca',
+    },
+  });
+
+  const paymentMethod = watch('paymentMethod');
+  const selectedBank = watch('bankCode');
+
+  useEffect(() => {
+    if (!booking) return;
+
+    if (booking.status === 'CONFIRMED' || booking.payment?.status === 'COMPLETED') {
+      router.push(`/success?bookingId=${bookingId}`);
+      return;
+    }
+
+    if (booking.payment?.status === 'PENDING' && booking.payment?.method === 'BANK_TRANSFER') {
+      router.push(`/instruction?bookingId=${bookingId}`);
+      return;
+    }
+
+    if (booking.status === 'CANCELLED' || booking.status === 'EXPIRED') {
+      showErrorToast('This booking is extremely expired or cancelled.');
+      router.push('/concerts');
+      return;
+    }
+  }, [booking, router, bookingId]);
 
   useEffect(() => {
     if (!booking?.expiresAt) return;
@@ -39,30 +84,15 @@ function CheckoutContent() {
     return () => clearInterval(interval);
   }, [booking?.expiresAt]);
 
-  const submitPayment = () => {
+  const handleBankTransferSubmit = (data: PaymentFormData) => {
     processPayment.mutate(
-      { bookingId },
+      { bookingId, paymentType: 'bank_transfer', bank: data.bankCode },
       {
         onSuccess: (res) => {
-          if (res.snapToken && window.snap) {
-            window.snap.pay(res.snapToken, {
-              onSuccess: function () {
-                showSuccessToast('Payment successful!', 'Your tickets are confirmed');
-                router.push(`/success?bookingId=${bookingId}`);
-              },
-              onPending: function () {
-                showSuccessToast('Payment pending', 'Please complete your payment.');
-                router.push(`/profile`);
-              },
-              onError: function () {
-                showErrorToast('Payment failed', 'Please try again.');
-              },
-              onClose: function () {
-                showErrorToast('Payment cancelled', 'You closed the payment popup.');
-              },
-            });
+          if (res.status === 'pending') {
+            router.push(`/instruction?bookingId=${bookingId}`);
           } else {
-            showErrorToast('Payment gateway unavailable', 'Please try again later.');
+            router.push(`/success?bookingId=${bookingId}`);
           }
         },
         onError: (error) => {
@@ -70,6 +100,63 @@ function CheckoutContent() {
         },
       }
     );
+  };
+
+  const handleCreditCardSubmit = async (data: PaymentFormData) => {
+    setIsTokenizing(true);
+    try {
+      const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
+      const apiUrl =
+        process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true'
+          ? 'https://api.midtrans.com/v2/token'
+          : 'https://api.sandbox.midtrans.com/v2/token';
+
+      const queryParams = new URLSearchParams({
+        client_key: clientKey || '',
+        card_number: data.cardNumber || '',
+        card_cvv: data.cvv || '',
+        card_exp_month: data.expiryMonth || '',
+        card_exp_year: `20${data.expiryYear?.slice(-2)}`, // Ensure YYYY format
+      });
+
+      const tokenRes = await fetch(`${apiUrl}?${queryParams.toString()}`);
+      const tokenData = await tokenRes.json();
+
+      if (tokenData.status_code !== '200') {
+        throw new Error(tokenData.validation_messages?.[0] || 'Card validation failed');
+      }
+
+      const tokenId = tokenData.token_id;
+
+      processPayment.mutate(
+        { bookingId, paymentType: 'credit_card', tokenId },
+        {
+          onSuccess: (res) => {
+            if (res.redirectUrl) {
+              window.location.href = res.redirectUrl;
+            } else {
+              showSuccessToast('Payment successful!', 'Your tickets are confirmed');
+              router.push(`/success?bookingId=${bookingId}`);
+            }
+          },
+          onError: (error) => {
+            showErrorToast(error, 'Payment failed');
+          },
+        }
+      );
+    } catch (err: any) {
+      showErrorToast(err.message || 'Failed to process card', 'Payment Error');
+    } finally {
+      setIsTokenizing(false);
+    }
+  };
+
+  const onSubmit = (data: PaymentFormData) => {
+    if (data.paymentMethod === 'credit_card') {
+      handleCreditCardSubmit(data);
+    } else {
+      handleBankTransferSubmit(data);
+    }
   };
 
   if (!bookingId) {
@@ -94,10 +181,6 @@ function CheckoutContent() {
 
   return (
     <div className="flex-1 bg-background py-12">
-      <Script
-        src="https://app.sandbox.midtrans.com/snap/snap.js"
-        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ''}
-      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <button onClick={() => router.back()} className="btn-brutal btn-ghost text-sm mb-4">
@@ -116,40 +199,163 @@ function CheckoutContent() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Payment Action */}
+          {/* Payment Form */}
           <div className="flex-1">
-            <div className="card-brutal-static p-6 sm:p-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="card-brutal-static p-6 sm:p-8">
               <h2 className="text-xl font-bold font-heading text-ink mb-6 flex items-center gap-2">
-                <Icon name="account_balance_wallet" /> Complete Payment
+                <Icon name="payment" /> Payment Method
               </h2>
 
-              <div className="text-center py-8 text-ink-muted">
-                <Icon name="payment" className="text-5xl mb-4 text-primary" />
-                <p className="font-medium mb-4">Click Pay to open the Midtrans secure payment gateway.</p>
-                <div className="pt-6 border-t-2 border-border-brutal">
-                  <button
-                    onClick={submitPayment}
-                    disabled={processPayment.isPending || timeLeft === 'Expired'}
-                    className="btn-brutal btn-primary w-full py-4 text-base"
-                  >
-                    {processPayment.isPending ? (
-                      <>
-                        <Icon name="progress_activity" className="animate-spin mr-2" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Icon name="lock" className="mr-2" />
-                        Pay Rp {booking?.totalAmount?.toLocaleString('id-ID') || '0'}
-                      </>
-                    )}
-                  </button>
-                  <p className="text-center text-xs text-ink-muted mt-4 flex items-center justify-center gap-1">
-                    <Icon name="verified_user" className="text-sm text-accent" /> Payments are secure and encrypted.
-                  </p>
-                </div>
+              <div className="flex gap-4 mb-8">
+                <button
+                  type="button"
+                  onClick={() => setValue('paymentMethod', 'credit_card')}
+                  className={`flex-1 p-4 rounded-xl border-2 font-bold flex flex-col items-center gap-2 transition-all ${
+                    paymentMethod === 'credit_card'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border-brutal bg-surface hover:bg-surface-hover text-ink-muted'
+                  }`}
+                >
+                  <Icon name="credit_card" className="text-2xl" />
+                  Credit Card
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setValue('paymentMethod', 'bank_transfer', { shouldValidate: true })}
+                  className={`flex-1 p-4 rounded-xl border-2 font-bold flex flex-col items-center gap-2 transition-all ${
+                    paymentMethod === 'bank_transfer'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border-brutal bg-surface hover:bg-surface-hover text-ink-muted'
+                  }`}
+                >
+                  <Icon name="account_balance" className="text-2xl" />
+                  Bank Transfer
+                </button>
               </div>
-            </div>
+
+              {paymentMethod === 'credit_card' ? (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                  <div className="col-span-2">
+                    <label className="block text-sm font-bold text-ink mb-2">Name on Card</label>
+                    <input
+                      {...register('name')}
+                      className={`input-brutal w-full ${errors.name ? 'border-secondary focus:ring-secondary/20' : ''}`}
+                      placeholder="John Doe"
+                    />
+                    {errors.name && <p className="mt-1 text-sm text-secondary font-medium">{errors.name.message}</p>}
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-sm font-bold text-ink mb-2">Card Number</label>
+                    <div className="relative">
+                      <Icon name="credit_card" className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
+                      <input
+                        {...register('cardNumber')}
+                        className={`input-brutal w-full pl-10 ${
+                          errors.cardNumber ? 'border-secondary focus:ring-secondary/20' : ''
+                        }`}
+                        placeholder="0000 0000 0000 0000"
+                        maxLength={16}
+                      />
+                    </div>
+                    {errors.cardNumber && (
+                      <p className="mt-1 text-sm text-secondary font-medium">{errors.cardNumber.message}</p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-ink mb-2">Expiry</label>
+                      <div className="flex gap-2">
+                        <input
+                          {...register('expiryMonth')}
+                          className={`input-brutal w-full text-center ${
+                            errors.expiryMonth ? 'border-secondary focus:ring-secondary/20' : ''
+                          }`}
+                          placeholder="MM"
+                          maxLength={2}
+                        />
+                        <span className="text-2xl text-ink-muted font-light">/</span>
+                        <input
+                          {...register('expiryYear')}
+                          className={`input-brutal w-full text-center ${
+                            errors.expiryYear ? 'border-secondary focus:ring-secondary/20' : ''
+                          }`}
+                          placeholder="YY"
+                          maxLength={4}
+                        />
+                      </div>
+                      {(errors.expiryMonth || errors.expiryYear) && (
+                        <p className="mt-1 text-sm text-secondary font-medium">Valid expiry required</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-ink mb-2 flex items-center gap-1">
+                        CVV
+                        <Icon name="info" className="text-sm text-ink-muted" />
+                      </label>
+                      <input
+                        {...register('cvv')}
+                        type="password"
+                        className={`input-brutal w-full ${
+                          errors.cvv ? 'border-secondary focus:ring-secondary/20' : ''
+                        }`}
+                        placeholder="123"
+                        maxLength={4}
+                      />
+                      {errors.cvv && <p className="mt-1 text-sm text-secondary font-medium">{errors.cvv.message}</p>}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+                  <label className="block text-sm font-bold text-ink mb-4">Select Bank</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {BANKS.map((bank) => (
+                      <div
+                        key={bank.id}
+                        onClick={() => setValue('bankCode', bank.id, { shouldValidate: true })}
+                        className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${
+                          selectedBank === bank.id
+                            ? 'border-primary bg-primary/10 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                            : 'border-border-brutal bg-surface hover:bg-surface-hover hover:-translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                        }`}
+                      >
+                        <span className="font-heading font-bold text-lg">{bank.logo}</span>
+                        <span className="text-xs font-medium text-ink-muted">{bank.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {errors.bankCode && (
+                    <p className="mt-2 text-sm text-secondary font-medium">{errors.bankCode.message}</p>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-8 pt-6 border-t-2 border-border-brutal">
+                <button
+                  type="submit"
+                  disabled={processPayment.isPending || isTokenizing || timeLeft === 'Expired'}
+                  className="btn-brutal btn-primary w-full py-4 text-base"
+                >
+                  {processPayment.isPending || isTokenizing ? (
+                    <>
+                      <Icon name="progress_activity" className="animate-spin mr-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="lock" className="mr-2" />
+                      Pay Rp {booking?.totalAmount?.toLocaleString('id-ID') || '0'}
+                    </>
+                  )}
+                </button>
+                <p className="text-center text-xs text-ink-muted mt-4 flex items-center justify-center gap-1">
+                  <Icon name="verified_user" className="text-sm text-accent" /> Payments are secure and encrypted.
+                </p>
+              </div>
+            </form>
           </div>
 
           {/* Order Summary Sidebar */}
@@ -160,7 +366,10 @@ function CheckoutContent() {
               {booking?.concert && (
                 <div className="flex gap-4 mb-6 pb-6 border-b-2 border-border-brutal/30">
                   <img
-                    src={booking.concert.imageUrl || 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&q=80'}
+                    src={
+                      booking.concert.imageUrl ||
+                      'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&q=80'
+                    }
                     alt={booking.concert.title}
                     className="w-20 h-20 rounded-xl border-2 border-border-brutal object-cover"
                   />
@@ -208,8 +417,7 @@ function CheckoutContent() {
               <div className="bg-accent-yellow/20 text-ink text-xs p-4 rounded-xl border-2 border-accent-yellow/50 flex items-start gap-2">
                 <Icon name="info" className="text-base shrink-0" />
                 <p>
-                  Tickets are non-refundable. By clicking &apos;Pay&apos;, you agree to our Terms of Service &amp; Privacy
-                  Policy.
+                  Tickets are non-refundable. By clicking 'Pay', you agree to our Terms of Service & Privacy Policy.
                 </p>
               </div>
             </div>

@@ -1,23 +1,22 @@
-enum UserRole {
-  ADMIN
-  USER
-}
-
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
+  id           String     @id @default(uuid())
+  email        String     @unique
   password     String
   name         String
-  role         UserRole  @default(USER)
+  role         UserRole   @default(USER)
   refreshToken String?
   avatarUrl    String?
   phone        String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  bookings  Booking[]
-  queueJobs QueueJob[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  bookings     Booking[]
+  queueJobs    QueueJob[]
 
   @@index([email])
   @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  USER
 }

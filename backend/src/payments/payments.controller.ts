@@ -30,10 +30,11 @@ export class PaymentsController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Process a payment for a booking using Midtrans Snap' })
+  @ApiOperation({ summary: 'Charge payment via Midtrans Core API (credit card or bank transfer)' })
   @ApiBody({ type: CreatePaymentBody })
-  @ApiResponse({ status: 201, description: 'Snap token generated' })
+  @ApiResponse({ status: 201, description: 'Charge result — includes redirectUrl or VA numbers' })
   @ApiResponse({ status: 400, description: 'Validation error or booking not payable' })
+
   async processPayment(
     @GetUser('id') userId: string,
     @Body(new ZodValidationPipe(createPaymentSchema)) dto: CreatePaymentDto,

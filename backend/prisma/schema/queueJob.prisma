@@ -1,10 +1,3 @@
-enum QueueJobStatus {
-  WAITING
-  PROCESSING
-  COMPLETED
-  FAILED
-}
-
 model QueueJob {
   id          String         @id @default(uuid())
   bookingId   String?        @unique
@@ -18,13 +11,19 @@ model QueueJob {
   processedAt DateTime?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
-
-  user    User     @relation(fields: [userId], references: [id])
-  concert Concert  @relation(fields: [concertId], references: [id])
-  booking Booking? @relation(fields: [bookingId], references: [id])
+  booking     Booking?       @relation(fields: [bookingId], references: [id])
+  concert     Concert        @relation(fields: [concertId], references: [id])
+  user        User           @relation(fields: [userId], references: [id])
 
   @@index([status])
   @@index([userId])
   @@index([concertId])
   @@map("queue_jobs")
+}
+
+enum QueueJobStatus {
+  WAITING
+  PROCESSING
+  COMPLETED
+  FAILED
 }

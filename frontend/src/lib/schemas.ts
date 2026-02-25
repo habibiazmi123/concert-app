@@ -16,7 +16,35 @@ export const registerSchema = z.object({
 export type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const paymentSchema = z.object({
-  // No fields needed for Snap payment initialization
+  paymentMethod: z.enum(['credit_card', 'bank_transfer']),
+  bankCode: z.string().optional(),
+  name: z.string().optional(),
+  cardNumber: z.string().optional(),
+  expiryMonth: z.string().optional(),
+  expiryYear: z.string().optional(),
+  cvv: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.paymentMethod === 'credit_card') {
+    if (!data.name?.trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Name on card is required', path: ['name'] });
+    }
+    if (!/^\d{16}$/.test(data.cardNumber || '')) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Enter a valid 16-digit card number', path: ['cardNumber'] });
+    }
+    if (!/^(0[1-9]|1[0-2])$/.test(data.expiryMonth || '')) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid month (01–12)', path: ['expiryMonth'] });
+    }
+    if (!/^\d{4}$/.test(data.expiryYear || '')) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid 4-digit year', path: ['expiryYear'] });
+    }
+    if (!/^\d{3,4}$/.test(data.cvv || '')) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'CVV must be 3–4 digits', path: ['cvv'] });
+    }
+  } else if (data.paymentMethod === 'bank_transfer') {
+    if (!data.bankCode?.trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Please select a bank', path: ['bankCode'] });
+    }
+  }
 });
 
 export type PaymentFormData = z.infer<typeof paymentSchema>;

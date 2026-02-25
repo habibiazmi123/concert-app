@@ -139,19 +139,25 @@ export interface Payment {
   method: PaymentMethod;
   status: string;
   transactionId?: string;
+  providerMetadata?: any;
   createdAt: string;
 }
 
 export interface CreatePaymentRequest {
   bookingId: string;
+  paymentType: string;
+  tokenId?: string;
+  bank?: string;
 }
 
-export interface SnapPaymentResponse {
-  snapToken: string;
-  redirectUrl?: string;
+export interface CorePaymentResponse {
+  status: string;
+  redirectUrl?: string | null;
+  payment: Payment;
   booking: {
     id: string;
     status: string;
   };
   message?: string;
+  chargeResponse?: any; // The raw midtrans response payload for VA numbers, etc.
 }
