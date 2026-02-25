@@ -3,9 +3,11 @@ import { BullModule } from '@nestjs/bullmq';
 import { BookingsService } from './bookings.service';
 import { BookingsController } from './bookings.controller';
 import { BookingProcessor } from './booking.processor';
+import { AdminModule } from '../admin/admin.module';
 
 @Module({
   imports: [
+    AdminModule,
     BullModule.registerQueue({
       name: 'booking',
       defaultJobOptions: {
@@ -22,3 +24,4 @@ import { BookingProcessor } from './booking.processor';
   exports: [BookingsService],
 })
 export class BookingsModule {}
+

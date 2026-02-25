@@ -97,7 +97,9 @@ export class AdminService {
 
     return {
       overview: {
-        totalRevenue: totalRevenue._sum.amount || 0,
+        totalRevenue: totalRevenue._sum.amount
+          ? Number(totalRevenue._sum.amount)
+          : 0,
         totalBookings,
         confirmedBookings,
         totalUsers,
@@ -107,7 +109,11 @@ export class AdminService {
           ? ((confirmedBookings / totalBookings) * 100).toFixed(1) + '%'
           : '0%',
       },
-      revenueByMonth,
+      revenueByMonth: (revenueByMonth as any[]).map((r) => ({
+        month: r.month,
+        revenue: Number(r.revenue),
+        count: Number(r.count),
+      })),
       topConcerts: topConcerts.map((c) => ({
         ...c,
         totalSeats: c.ticketTypes.reduce((sum, tt) => sum + tt.totalSeats, 0),

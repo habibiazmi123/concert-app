@@ -9,8 +9,10 @@ import {
   Query,
   UseGuards,
   UsePipes,
+  BadRequestException,
 } from '@nestjs/common';
 import { ConcertsService } from './concerts.service';
+import { UploadService } from '../upload/upload.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -43,11 +45,22 @@ import {
   UpdateTicketTypeBody,
 } from '../common/swagger/swagger.schemas';
 
+const ALLOWED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
+
 @ApiTags('Concerts')
 @ApiBearerAuth()
 @Controller('concerts')
 export class ConcertsController {
-  constructor(private readonly concertsService: ConcertsService) {}
+  constructor(
+    private readonly concertsService: ConcertsService,
+    private readonly uploadService: UploadService,
+  ) {}
 
   // ─── Public Endpoints ──────────────────────────────
 
@@ -76,6 +89,43 @@ export class ConcertsController {
   }
 
   // ─── Admin Endpoints ──────────────────────────────
+
+  @Get(':id/upload-url')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Get presigned URL for image upload (Admin)' })
+  @ApiParam({ name: 'id', description: 'Concert ID' })
+  @ApiQuery({ name: 'fileType', required: true, type: String, example: 'image/jpeg' })
+  @ApiResponse({
+    status: 200,
+    description: 'Presigned upload URL and public URL',
+  })
+  async getUploadUrl(
+    @Param('id') id: string,
+    @Query('fileType') fileType: string,
+  ) {
+    // Validate concert exists
+    const concert = await this.concertsService.findById(id);
+
+    if (!fileType || !ALLOWED_IMAGE_TYPES.includes(fileType)) {
+      throw new BadRequestException(
+        `Invalid file type. Allowed: ${ALLOWED_IMAGE_TYPES.join(', ')}`,
+      );
+    }
+
+    // Delete old image if exists
+    if (concert.imageUrl) {
+      const oldKey = this.uploadService.extractKeyFromUrl(concert.imageUrl);
+      if (oldKey) {
+        await this.uploadService.deleteFile(oldKey);
+      }
+    }
+
+    const { uploadUrl, publicUrl, key } =
+      await this.uploadService.generatePresignedUploadUrl('concerts', fileType);
+
+    return { uploadUrl, publicUrl, key };
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)

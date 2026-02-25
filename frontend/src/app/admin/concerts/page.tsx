@@ -1,26 +1,129 @@
 'use client';
 
+import { useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Pagination } from '@/components/ui/Pagination';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { ConcertFormModal } from '@/components/admin/concerts/ConcertFormModal';
+import { ConcertTable } from '@/components/admin/concerts/ConcertTable';
+import { useAdminConcerts, useDeleteConcert } from '@/hooks/queries/useConcerts';
+import { showSuccessToast, showErrorToast } from '@/lib/toast';
+import type { Concert, ConcertStatus } from '@/lib/types';
 
 export default function AdminConcertsPage() {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<ConcertStatus | ''>('');
+
+  const { data, isLoading } = useAdminConcerts({
+    page,
+    limit: 10,
+    search: search || undefined,
+    status: statusFilter || undefined,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
+  });
+
+  const deleteMutation = useDeleteConcert();
+  const [showForm, setShowForm] = useState(false);
+  const [editConcert, setEditConcert] = useState<Concert | null>(null);
+  const [deleteConcert, setDeleteConcert] = useState<Concert | null>(null);
+
+  const concerts = data?.data || [];
+  const meta = data?.meta;
+
+  const handleDelete = async () => {
+    if (!deleteConcert) return;
+    try {
+      await deleteMutation.mutateAsync(deleteConcert.id);
+      showSuccessToast('Concert deleted');
+      setDeleteConcert(null);
+    } catch (error) {
+      showErrorToast(error, 'Delete failed');
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Concerts & Events</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage your events, artists, and venues.</p>
+      <PageHeader
+        title="Concerts & Events"
+        subtitle="Manage your events, artists, and venues."
+        action={
+          <button
+            onClick={() => { setEditConcert(null); setShowForm(true); }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-[var(--color-primary-hover)] text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
+          >
+            <Icon name="add" className="text-lg" />
+            Create Event
+          </button>
+        }
+      />
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
+          <input
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Search concerts..."
+            className="w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-[var(--color-primary-hover)] text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
-          <Icon name="add" className="text-lg" />
-          Create Event
-        </button>
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value as ConcertStatus | ''); setPage(1); }}
+          className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary"
+        >
+          <option value="">All Statuses</option>
+          <option value="DRAFT">Draft</option>
+          <option value="PUBLISHED">Published</option>
+          <option value="CANCELLED">Cancelled</option>
+          <option value="COMPLETED">Completed</option>
+        </select>
       </div>
 
-       <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-xl shadow-sm overflow-hidden">
-          <div className="p-8 text-center text-slate-500 dark:text-slate-400">
-             Concert list and CRUD management interface pending integration with NestJS API.
-          </div>
-       </div>
+      {/* Table */}
+      <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-xl shadow-sm overflow-hidden">
+        <ConcertTable
+          concerts={concerts}
+          loading={isLoading}
+          onEdit={(c) => { setEditConcert(c); setShowForm(true); }}
+          onDelete={setDeleteConcert}
+        />
+        {meta && (
+          <Pagination
+            page={page}
+            totalPages={meta.totalPages}
+            total={meta.total}
+            limit={meta.limit}
+            onPageChange={setPage}
+          />
+        )}
+      </div>
+
+      {/* Modals */}
+      {showForm && (
+        <ConcertFormModal
+          concert={editConcert}
+          onClose={() => { setShowForm(false); setEditConcert(null); }}
+        />
+      )}
+
+      <ConfirmDialog
+        open={!!deleteConcert}
+        onClose={() => setDeleteConcert(null)}
+        onConfirm={handleDelete}
+        title="Delete Concert"
+        message={
+          deleteConcert ? (
+            <p>Are you sure you want to delete <strong>&quot;{deleteConcert.title}&quot;</strong>?</p>
+          ) : null
+        }
+        confirmLabel="Delete"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 }

@@ -18,8 +18,17 @@ export default () => ({
     expirationMinutes: parseInt(process.env.BOOKING_EXPIRATION_MINUTES || '10', 10),
     lockTtlSeconds: parseInt(process.env.LOCK_TTL_SECONDS || '5', 10),
     maxRetries: parseInt(process.env.MAX_LOCK_RETRIES || '3', 10),
+    processDelayMs: parseInt(process.env.BOOKING_PROCESS_DELAY_MS || '0', 10),
   },
   payment: {
     successRate: parseFloat(process.env.PAYMENT_SUCCESS_RATE || '0.9'),
+  },
+  s3: {
+    endpoint: process.env.S3_ENDPOINT || 'http://localhost:9000',
+    region: process.env.S3_REGION || 'us-east-1',
+    bucket: process.env.S3_BUCKET || 'concert-app',
+    accessKeyId: process.env.S3_ACCESS_KEY_ID || 'minioadmin',
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || 'minioadmin',
+    forcePathStyle: process.env.S3_FORCE_PATH_STYLE !== 'false', // true for MinIO
   },
 });
