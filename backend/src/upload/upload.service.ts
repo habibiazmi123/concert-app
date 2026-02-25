@@ -6,6 +6,7 @@ import {
   DeleteObjectCommand,
   HeadBucketCommand,
   CreateBucketCommand,
+  PutBucketPolicyCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
@@ -35,7 +36,6 @@ export class UploadService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    // Auto-create bucket if it doesn't exist (dev convenience for MinIO)
     try {
       await this.s3.send(new HeadBucketCommand({ Bucket: this.bucket }));
       this.logger.log(`S3 bucket "${this.bucket}" is accessible`);
@@ -53,7 +53,36 @@ export class UploadService implements OnModuleInit {
         this.logger.warn(
           `Could not check S3 bucket: ${error.message}. Upload features may not work.`,
         );
+        return;
       }
+    }
+
+    // Set public-read policy so uploaded images are accessible via direct URL
+    await this.setBucketPublicReadPolicy();
+  }
+
+  private async setBucketPublicReadPolicy(): Promise<void> {
+    const policy = JSON.stringify({
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Effect: 'Allow',
+          Principal: '*',
+          Action: ['s3:GetObject'],
+          Resource: [`arn:aws:s3:::${this.bucket}/*`],
+        },
+      ],
+    });
+
+    try {
+      await this.s3.send(
+        new PutBucketPolicyCommand({ Bucket: this.bucket, Policy: policy }),
+      );
+      this.logger.log(`Bucket "${this.bucket}" set to public-read`);
+    } catch (error: any) {
+      this.logger.warn(
+        `Could not set bucket policy: ${error.message}. Files may not be publicly accessible.`,
+      );
     }
   }
 

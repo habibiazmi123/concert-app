@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Icon } from '@/components/ui/Icon';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
@@ -14,12 +15,13 @@ import type { Concert, ConcertStatus } from '@/lib/types';
 export default function AdminConcertsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState<ConcertStatus | ''>('');
 
   const { data, isLoading } = useAdminConcerts({
     page,
     limit: 10,
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     status: statusFilter || undefined,
     sortBy: 'createdAt',
     sortOrder: 'desc',
