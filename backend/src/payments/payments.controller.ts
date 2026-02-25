@@ -5,6 +5,7 @@ import {
   Body,
   Param,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,16 +23,16 @@ import { createPaymentSchema, type CreatePaymentDto } from './dto/payment.dto';
 import { CreatePaymentBody } from '../common/swagger/swagger.schemas';
 
 @ApiTags('Payments')
-@ApiBearerAuth()
 @Controller('payments')
-@UseGuards(JwtAuthGuard)
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Process a payment for a booking' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Process a payment for a booking using Midtrans Snap' })
   @ApiBody({ type: CreatePaymentBody })
-  @ApiResponse({ status: 201, description: 'Payment processed' })
+  @ApiResponse({ status: 201, description: 'Snap token generated' })
   @ApiResponse({ status: 400, description: 'Validation error or booking not payable' })
   async processPayment(
     @GetUser('id') userId: string,
@@ -40,7 +41,17 @@ export class PaymentsController {
     return this.paymentsService.processPayment(userId, dto);
   }
 
+  @Post('notification')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Midtrans Webhook Notification Handler' })
+  @ApiResponse({ status: 200, description: 'Webhook processed' })
+  async handleNotification(@Body() body: any) {
+    return this.paymentsService.handleNotification(body);
+  }
+
   @Get(':bookingId')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get payment details by booking ID' })
   @ApiParam({ name: 'bookingId', description: 'Booking ID' })
   @ApiResponse({ status: 200, description: 'Payment details' })

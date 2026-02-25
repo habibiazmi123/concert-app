@@ -160,9 +160,6 @@ export class CreateBookingBody {
 export class CreatePaymentBody {
   @ApiProperty({ example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', format: 'uuid' })
   bookingId: string;
-
-  @ApiProperty({ enum: ['CREDIT_CARD', 'DEBIT_CARD', 'BANK_TRANSFER', 'E_WALLET'], example: 'E_WALLET' })
-  method: string;
 }
 
 // ─── Users ───────────────────────────────────────────

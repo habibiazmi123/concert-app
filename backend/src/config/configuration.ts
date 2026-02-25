@@ -31,4 +31,9 @@ export default () => ({
     secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || 'minioadmin',
     forcePathStyle: process.env.S3_FORCE_PATH_STYLE !== 'false', // true for MinIO
   },
+  midtrans: {
+    serverKey: process.env.MIDTRANS_SERVER_KEY || '',
+    clientKey: process.env.MIDTRANS_CLIENT_KEY || '',
+    isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
+  },
 });

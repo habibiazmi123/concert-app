@@ -2,13 +2,17 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import Script from 'next/script';
 import { Icon } from '@/components/ui/Icon';
 import { useBooking } from '@/hooks/queries/useBookings';
 import { useProcessPaymentMutation } from '@/hooks/queries/usePayments';
 import { showErrorToast, showSuccessToast } from '@/lib/toast';
-import { paymentSchema, type PaymentFormData } from '@/lib/schemas';
+
+declare global {
+  interface Window {
+    snap: any;
+  }
+}
 
 function CheckoutContent() {
   const router = useRouter();
@@ -16,16 +20,6 @@ function CheckoutContent() {
   const bookingId = searchParams.get('bookingId') || '';
   const { data: booking, isLoading: bookingLoading } = useBooking(bookingId);
   const processPayment = useProcessPaymentMutation();
-
-  const [paymentMethod, setPaymentMethod] = useState('card');
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<PaymentFormData>({
-    resolver: zodResolver(paymentSchema),
-  });
 
   const [timeLeft, setTimeLeft] = useState('');
 
@@ -47,29 +41,35 @@ function CheckoutContent() {
 
   const submitPayment = () => {
     processPayment.mutate(
+      { bookingId },
       {
-        bookingId,
-        method: paymentMethod === 'card' ? 'CREDIT_CARD' : 'E_WALLET',
-      },
-      {
-        onSuccess: () => {
-          showSuccessToast('Payment successful!', 'Your tickets are confirmed');
-          router.push(`/success?bookingId=${bookingId}`);
+        onSuccess: (res) => {
+          if (res.snapToken && window.snap) {
+            window.snap.pay(res.snapToken, {
+              onSuccess: function () {
+                showSuccessToast('Payment successful!', 'Your tickets are confirmed');
+                router.push(`/success?bookingId=${bookingId}`);
+              },
+              onPending: function () {
+                showSuccessToast('Payment pending', 'Please complete your payment.');
+                router.push(`/profile`);
+              },
+              onError: function () {
+                showErrorToast('Payment failed', 'Please try again.');
+              },
+              onClose: function () {
+                showErrorToast('Payment cancelled', 'You closed the payment popup.');
+              },
+            });
+          } else {
+            showErrorToast('Payment gateway unavailable', 'Please try again later.');
+          }
         },
         onError: (error) => {
           showErrorToast(error, 'Payment failed');
         },
       }
     );
-  };
-
-  const onFormSubmit = (_data: PaymentFormData) => {
-    submitPayment();
-  };
-
-  const handleEwalletSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    submitPayment();
   };
 
   if (!bookingId) {
@@ -94,6 +94,10 @@ function CheckoutContent() {
 
   return (
     <div className="flex-1 bg-background py-12">
+      <Script
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ''}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <button onClick={() => router.back()} className="btn-brutal btn-ghost text-sm mb-4">
@@ -112,128 +116,26 @@ function CheckoutContent() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Payment Details */}
+          {/* Payment Action */}
           <div className="flex-1">
             <div className="card-brutal-static p-6 sm:p-8">
               <h2 className="text-xl font-bold font-heading text-ink mb-6 flex items-center gap-2">
-                <Icon name="credit_card" /> Payment Method
+                <Icon name="account_balance_wallet" /> Complete Payment
               </h2>
 
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
-                    paymentMethod === 'card'
-                      ? 'border-primary bg-primary/5 text-primary shadow-brutal-sm'
-                      : 'border-border-brutal text-ink-muted hover:bg-surface-alt'
-                  }`}
-                >
-                  <Icon name="credit_score" className="text-3xl mb-2" />
-                  <span className="font-bold">Credit Card</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('ewallet')}
-                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
-                    paymentMethod === 'ewallet'
-                      ? 'border-primary bg-primary/5 text-primary shadow-brutal-sm'
-                      : 'border-border-brutal text-ink-muted hover:bg-surface-alt'
-                  }`}
-                >
-                  <Icon name="account_balance_wallet" className="text-3xl mb-2" />
-                  <span className="font-bold">E-Wallet</span>
-                </button>
-              </div>
-
-              <form
-                onSubmit={paymentMethod === 'card' ? handleSubmit(onFormSubmit) : handleEwalletSubmit}
-                className="space-y-6"
-              >
-                {paymentMethod === 'card' && (
-                  <>
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-semibold text-ink mb-1">
-                        Name on Card
-                      </label>
-                      <input
-                        type="text"
-                        id="name"
-                        placeholder="John Doe"
-                        {...register('name')}
-                        className={`input-brutal ${errors.name ? 'input-brutal-error' : ''}`}
-                      />
-                      {errors.name && <p className="mt-1 text-sm text-secondary font-medium">{errors.name.message}</p>}
-                    </div>
-                    <div>
-                      <label htmlFor="cardNumber" className="block text-sm font-semibold text-ink mb-1">
-                        Card Number
-                      </label>
-                      <div className="relative">
-                        <Icon name="credit_card" className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-light" />
-                        <input
-                          type="text"
-                          id="cardNumber"
-                          placeholder="0000 0000 0000 0000"
-                          {...register('cardNumber')}
-                          className={`input-brutal pl-12 tracking-widest ${errors.cardNumber ? 'input-brutal-error' : ''}`}
-                        />
-                      </div>
-                      {errors.cardNumber && (
-                        <p className="mt-1 text-sm text-secondary font-medium">{errors.cardNumber.message}</p>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="expiry" className="block text-sm font-semibold text-ink mb-1">
-                          Expiry Date
-                        </label>
-                        <input
-                          type="text"
-                          id="expiry"
-                          placeholder="MM/YY"
-                          {...register('expiry')}
-                          className={`input-brutal ${errors.expiry ? 'input-brutal-error' : ''}`}
-                        />
-                        {errors.expiry && <p className="mt-1 text-sm text-secondary font-medium">{errors.expiry.message}</p>}
-                      </div>
-                      <div>
-                        <label htmlFor="cvc" className="block text-sm font-semibold text-ink mb-1">
-                          CVC
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            id="cvc"
-                            placeholder="123"
-                            {...register('cvc')}
-                            className={`input-brutal ${errors.cvc ? 'input-brutal-error' : ''}`}
-                          />
-                          <Icon name="help" className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-light text-sm cursor-help" />
-                        </div>
-                        {errors.cvc && <p className="mt-1 text-sm text-secondary font-medium">{errors.cvc.message}</p>}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {paymentMethod === 'ewallet' && (
-                  <div className="text-center py-8 text-ink-muted">
-                    <Icon name="account_balance_wallet" className="text-5xl mb-4 text-primary" />
-                    <p className="font-medium">Click Pay to proceed with E-Wallet payment.</p>
-                  </div>
-                )}
-
+              <div className="text-center py-8 text-ink-muted">
+                <Icon name="payment" className="text-5xl mb-4 text-primary" />
+                <p className="font-medium mb-4">Click Pay to open the Midtrans secure payment gateway.</p>
                 <div className="pt-6 border-t-2 border-border-brutal">
                   <button
-                    type="submit"
+                    onClick={submitPayment}
                     disabled={processPayment.isPending || timeLeft === 'Expired'}
                     className="btn-brutal btn-primary w-full py-4 text-base"
                   >
                     {processPayment.isPending ? (
                       <>
                         <Icon name="progress_activity" className="animate-spin mr-2" />
-                        Processing Payment...
+                        Processing...
                       </>
                     ) : (
                       <>
@@ -246,7 +148,7 @@ function CheckoutContent() {
                     <Icon name="verified_user" className="text-sm text-accent" /> Payments are secure and encrypted.
                   </p>
                 </div>
-              </form>
+              </div>
             </div>
           </div>
 
@@ -282,7 +184,7 @@ function CheckoutContent() {
 
               {booking?.items && (
                 <div className="space-y-3 mb-6 pb-6 border-b-2 border-border-brutal/30">
-                  {booking.items.map((item) => (
+                  {booking.items.map((item: any) => (
                     <div key={item.id} className="flex justify-between items-center text-ink-muted text-sm">
                       <span>
                         {item.quantity}x {item.ticketType?.name || 'Ticket'}

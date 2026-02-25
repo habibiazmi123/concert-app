@@ -5,31 +5,42 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/payment.dto';
-import { v4 as uuidv4 } from 'uuid';
+import { firstValueFrom } from 'rxjs';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
-  private readonly successRate: number;
+  private readonly serverKey: string;
+  private readonly clientKey: string;
+  private readonly isProduction: boolean;
+  private readonly midtransApiUrl: string;
 
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    private httpService: HttpService,
   ) {
-    this.successRate = configService.get<number>('payment.successRate') || 0.9;
+    this.serverKey = configService.get<string>('midtrans.serverKey') || '';
+    this.clientKey = configService.get<string>('midtrans.clientKey') || '';
+    this.isProduction = configService.get<boolean>('midtrans.isProduction') || false;
+    this.midtransApiUrl = this.isProduction
+      ? 'https://app.midtrans.com/snap/v1/transactions'
+      : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
   }
 
   /**
-   * Process a simulated payment for a booking.
+   * Process a payment by generating a Midtrans Snap Token.
    */
   async processPayment(userId: string, dto: CreatePaymentDto) {
     const booking = await this.prisma.booking.findFirst({
       where: { id: dto.bookingId, userId },
       include: {
         payment: true,
-        bookingItems: true,
+        user: true,
       },
     });
 
@@ -43,102 +54,179 @@ export class PaymentsService {
       );
     }
 
-    if (booking.payment) {
-      throw new BadRequestException('Payment already exists for this booking');
-    }
-
+    // Checking expiry if needed
     if (new Date() > booking.expiresAt) {
       throw new BadRequestException(
         'Booking has expired. Please create a new booking.',
       );
     }
 
-    // Simulate payment processing
-    const isSuccess = Math.random() < this.successRate;
-    const transactionId = uuidv4();
+    // Set up Midtrans request
+    const authString = Buffer.from(this.serverKey + ':').toString('base64');
+    
+    // Convert Decimal to number for Midtrans
+    const grossAmount = Math.round(Number(booking.totalAmount));
 
-    if (isSuccess) {
-      // Success: create payment and confirm booking
-      const [payment] = await this.prisma.$transaction([
-        this.prisma.payment.create({
-          data: {
-            bookingId: booking.id,
-            amount: booking.totalAmount,
-            method: dto.method,
-            status: 'COMPLETED',
-            transactionId,
-            paidAt: new Date(),
+    const payload = {
+      transaction_details: {
+        order_id: booking.id,
+        gross_amount: grossAmount,
+      },
+      customer_details: {
+        first_name: booking.user.name,
+        email: booking.user.email,
+        phone: booking.user.phone || undefined,
+      },
+    };
+
+    console.log(payload)
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(this.midtransApiUrl, payload, {
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Basic ${authString}`,
           },
         }),
-        this.prisma.booking.update({
-          where: { id: booking.id },
-          data: { status: 'CONFIRMED' },
-        }),
-      ]);
-
-      this.logger.log(
-        `Payment successful: ${payment.id}, booking: ${booking.id}`,
       );
 
+      this.logger.log(`Generated Snap token for booking: ${booking.id}`);
+
       return {
-        payment,
+        snapToken: response.data.token,
+        redirectUrl: response.data.redirect_url,
         booking: {
           id: booking.id,
-          status: 'CONFIRMED',
+          status: booking.status,
         },
-        message: 'Payment processed successfully',
+        message: 'Payment token generated successfully',
       };
-    } else {
-      // Failure: create failed payment, release seats
-      const payment = await this.prisma.payment.create({
-        data: {
-          bookingId: booking.id,
+    } catch (error: any) {
+      this.logger.error('Midtrans API error', error.response?.data || error.message);
+      throw new BadRequestException('Failed to generate payment token');
+    }
+  }
+
+  /**
+   * Handle webhook notification from Midtrans
+   */
+  async handleNotification(body: any) {
+    const {
+      order_id,
+      status_code,
+      gross_amount,
+      signature_key,
+      transaction_status,
+      fraud_status,
+      payment_type,
+      transaction_id,
+    } = body;
+
+    // 1. Verify Signature
+    const hashString = order_id + status_code + gross_amount + this.serverKey;
+    const expectedSignature = crypto
+      .createHash('sha512')
+      .update(hashString)
+      .digest('hex');
+
+    if (signature_key !== expectedSignature) {
+      this.logger.warn(`Invalid signature for order: ${order_id}`);
+      throw new BadRequestException('Invalid signature');
+    }
+
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: order_id },
+      include: { bookingItems: true },
+    });
+
+    if (!booking) {
+      this.logger.warn(`Booking not found for order: ${order_id}`);
+      return { status: 'ok', message: 'Booking not found' };
+    }
+
+    // 2. Map Payment Method
+    let method: any = 'E_WALLET';
+    if (payment_type === 'credit_card') method = 'CREDIT_CARD';
+    else if (payment_type === 'bank_transfer') method = 'BANK_TRANSFER';
+    else if (payment_type?.includes('debit')) method = 'DEBIT_CARD';
+
+    // 3. Determine Payment & Booking Status
+    let paymentStatus: any = 'PENDING';
+    let bookingStatus: any = booking.status;
+    let isFailed = false;
+
+    if (
+      transaction_status === 'capture' ||
+      transaction_status === 'settlement'
+    ) {
+      if (transaction_status === 'capture' && fraud_status === 'challenge') {
+        paymentStatus = 'PENDING';
+      } else {
+        paymentStatus = 'COMPLETED';
+        bookingStatus = 'CONFIRMED';
+      }
+    } else if (
+      transaction_status === 'deny' ||
+      transaction_status === 'cancel' ||
+      transaction_status === 'expire'
+    ) {
+      paymentStatus = 'FAILED';
+      bookingStatus = 'CANCELLED';
+      isFailed = true;
+    }
+
+    // 4. Update Database
+    await this.prisma.$transaction(async (tx) => {
+      // Upsert payment record
+      await tx.payment.upsert({
+        where: { bookingId: order_id },
+        update: {
+          status: paymentStatus,
+          transactionId: transaction_id,
+          method,
+          ...(paymentStatus === 'COMPLETED' ? { paidAt: new Date() } : {}),
+        },
+        create: {
+          bookingId: order_id,
           amount: booking.totalAmount,
-          method: dto.method,
-          status: 'FAILED',
-          transactionId,
-          failureReason: 'Payment declined by processor (simulated)',
+          status: paymentStatus,
+          transactionId: transaction_id,
+          method,
+          ...(paymentStatus === 'COMPLETED' ? { paidAt: new Date() } : {}),
         },
       });
 
-      // Release seats
-      await this.prisma.$transaction(async (tx) => {
-        for (const item of booking.bookingItems) {
-          await tx.ticketType.update({
-            where: { id: item.ticketTypeId },
-            data: {
-              availableSeats: { increment: item.quantity },
-            },
-          });
-        }
-
+      // Update booking status if changed
+      if (booking.status !== bookingStatus) {
         await tx.booking.update({
           where: { id: booking.id },
-          data: { status: 'CANCELLED' },
+          data: { status: bookingStatus },
         });
-      });
 
-      this.logger.warn(
-        `Payment failed: ${payment.id}, booking: ${booking.id}`,
-      );
+        // Release seats if failed and it was previously not cancelled
+        if (isFailed && booking.status !== 'CANCELLED') {
+          for (const item of booking.bookingItems) {
+            await tx.ticketType.update({
+              where: { id: item.ticketTypeId },
+              data: {
+                availableSeats: { increment: item.quantity },
+              },
+            });
+          }
+        }
+      }
+    });
 
-      return {
-        payment,
-        booking: {
-          id: booking.id,
-          status: 'CANCELLED',
-        },
-        message: 'Payment failed. Booking has been cancelled.',
-      };
-    }
+    this.logger.log(`Handled webhook for booking ${order_id}, status: ${paymentStatus}`);
+    return { status: 'ok' };
   }
 
   /**
    * Get payment status for a booking.
    */
   async getPaymentByBookingId(bookingId: string, userId?: string) {
-    const where: any = { bookingId };
-
     const payment = await this.prisma.payment.findUnique({
       where: { bookingId },
       include: {

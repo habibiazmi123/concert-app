@@ -144,5 +144,14 @@ export interface Payment {
 
 export interface CreatePaymentRequest {
   bookingId: string;
-  method: PaymentMethod;
+}
+
+export interface SnapPaymentResponse {
+  snapToken: string;
+  redirectUrl?: string;
+  booking: {
+    id: string;
+    status: string;
+  };
+  message?: string;
 }

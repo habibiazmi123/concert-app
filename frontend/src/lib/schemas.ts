@@ -16,10 +16,7 @@ export const registerSchema = z.object({
 export type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const paymentSchema = z.object({
-  name: z.string().min(1, 'Name on card is required'),
-  cardNumber: z.string().min(16, 'Enter a valid card number'),
-  expiry: z.string().regex(/^\d{2}\/\d{2}$/, 'Format: MM/YY'),
-  cvc: z.string().min(3, 'CVC must be 3-4 digits').max(4),
+  // No fields needed for Snap payment initialization
 });
 
 export type PaymentFormData = z.infer<typeof paymentSchema>;
